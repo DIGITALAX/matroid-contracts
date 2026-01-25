@@ -1,0 +1,23 @@
+{
+  "anvil": {
+    "MatroidRegistry": {
+      "address": "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
+      "startBlock": 0
+    },
+    "MatroidKit": {
+      "address": "0x8ce361602b935680e8dec218b820ff5056beb7af"
+    },
+    "Treasury": {
+      "address": "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e"
+    },
+    "SlashingCouncil": {
+      "address": "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d"
+    },
+    "GlobalStakingPool": {
+      "address": "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
+    },
+    "StakingFactory": {
+      "address": "0xa15bb66138824a1c7167f5e85b957d04dd34e468"
+    }
+  }
+}

@@ -1,0 +1,461 @@
+type Global @entity {
+  id: Bytes!
+  in: [MatroidIn!]
+  out: [MatroidOut!]
+  totalStaked: BigInt
+  rewardNotifiedTotal: BigInt
+  stakerCount: Int
+  stakers: [Staker!]
+  epochs: [Epoch!]
+  deposits: [TreasuryDeposit!]
+  totalDeposited: BigInt
+  targetTotal: BigInt
+  targetDuration: BigInt
+  claimWindow: BigInt
+  distributionStart: BigInt
+  totalDistributed: BigInt
+  baseBudget: BigInt
+  perProjectBudget: BigInt
+  mona: Bytes
+  registry: Bytes
+  scorer: Bytes
+  globalPool: Bytes
+  slashingContract: Bytes
+  projects: [Project!]
+}
+
+type TreasuryDeposit @entity {
+  id: Bytes!
+  from: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Epoch @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  totalScore: BigInt! # uint256
+  activeProjects: BigInt! # uint256
+  projects: [Project!]
+  budget: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type MatroidIn @entity {
+  id: Bytes!
+  project: Bytes! # address
+  user: Bytes! # address
+  token: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type MatroidOut @entity {
+  id: Bytes!
+  project: Bytes! # address
+  user: Bytes! # address
+  token: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Staker @entity {
+  id: Bytes!
+  pool: Global!
+  user: Bytes!
+  stakedAmount: BigInt!
+  staked: [Staked!]
+  unstaked: [Unstaked!]
+}
+
+type Staked @entity {
+  id: Bytes!
+  user: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Unstaked @entity {
+  id: Bytes!
+  user: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Project @entity {
+  id: Bytes!
+  metadata: ProjectMetadata
+  registeredAt: BigInt
+  erc20Pool: ProjectPoolERC20
+  nftPool: ProjectPoolNFT
+  globalSplitBps: Int
+  projectErc20SplitBps: Int
+  projectNftSplitBps: Int
+  monaIn: [TokenFlow!]
+  monaOut: [TokenFlow!]
+  monaTxCount: BigInt
+  monaUniqueUsers: BigInt
+  claimableHistory: [Claimable!]
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  admins: [Bytes!]
+}
+
+type ProjectMetadata @entity {
+  id: String!
+  title: String
+  image: String
+  description: String
+}
+
+type TokenFlow @entity {
+  id: Bytes!
+  project: Project!
+  user: Bytes!
+  token: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  amount: BigInt!
+}
+
+type ProjectPoolERC20 @entity {
+  id: Bytes!
+  project: Project!
+  totalStaked: BigInt!
+  rewardNotifiedTotal: BigInt!
+  rewardTokens: [Bytes!]
+  claims: [PoolClaim!]
+  stakerCount: Int!
+  stakers: [ERC20Staker!]
+}
+
+type ProjectPoolNFT @entity {
+  id: Bytes!
+  project: Project!
+  totalWeight: BigInt!
+  whitelistCount: Int!
+  whitelistedNfts: [WhitelistedNFT!]
+  rewardNotifiedTotal: BigInt!
+  rewardTokens: [Bytes!]
+  claims: [PoolClaim!]
+  stakerCount: Int!
+  stakers: [NFTStaker!]
+}
+
+type ERC20Staker @entity {
+  id: Bytes!
+  pool: ProjectPoolERC20!
+  user: Bytes!
+  stakedAmount: BigInt!
+}
+
+type NFTStaker @entity {
+  id: Bytes!
+  pool: ProjectPoolNFT!
+  user: Bytes!
+  totalWeight: BigInt!
+  tokenIds: [BigInt!]!
+}
+
+type Claimable @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  amount: BigInt!
+  setBlockNumber: BigInt!
+  setBlockTimestamp: BigInt!
+  setTransactionHash: Bytes!
+  clearedBlockNumber: BigInt!
+  clearedBlockTimestamp: BigInt!
+  clearedTransactionHash: Bytes!
+  claimers: [Claimer!]
+  distributionTimestamp: BigInt! # uint256
+  distributionBlockNumber: BigInt!
+  distributionBlockTimestamp: BigInt!
+  distributionTransactionHash: Bytes!
+  proposal: Proposal
+}
+
+type ClaimableSet @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type ClaimableCleared @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TreasuryClaimed @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  claimer: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type DistributionStarted @entity {
+  id: Bytes!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type EpochFinalized @entity {
+  id: Bytes!
+  epoch: BigInt!
+  totalScore: BigInt!
+  activeProjects: BigInt!
+  budget: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type SlashRewardNotified @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TargetDurationUpdated @entity {
+  id: Bytes!
+  oldDuration: BigInt!
+  newDuration: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TargetReconciled @entity {
+  id: Bytes!
+  oldTarget: BigInt!
+  newTarget: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TargetUpdated @entity {
+  id: Bytes!
+  oldTarget: BigInt!
+  newTarget: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type SlashingContractUpdated @entity {
+  id: Bytes!
+  oldContract: Bytes!
+  newContract: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type GlobalClaimed @entity {
+  id: Bytes!
+  user: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type GlobalRewardNotified @entity {
+  id: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type MatroidKitProjectRegistered @entity {
+  id: Bytes!
+  project: Bytes!
+  metadata: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type ProjectPoolsCreated @entity {
+  id: Bytes!
+  project: Bytes!
+  erc20Pool: Bytes!
+  nftPool: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Proposal @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  project: Project
+  slashBps: Int! # uint16
+  blacklist: Boolean! # bool
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  resolved: ProposalResolved
+  voters: [Voter!]
+  slash: ProjectSlash
+}
+
+type ProjectSlash @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  project: Bytes! # address
+  slashBps: Int! # uint16
+  blacklisted: Boolean! # bool
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  resolve: SlashResolve
+}
+
+type SlashResolve @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  project: Bytes! # address
+  voterReward: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type ProposalResolved @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  project: Bytes! # address
+  passed: Boolean! # bool
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Voter @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  project: Project # address
+  voter: Bytes! # address
+  weight: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  rewardAmount: BigInt
+  rewardBlockNumber: BigInt!
+  rewardBlockTimestamp: BigInt!
+  rewardTransactionHash: Bytes!
+}
+
+type Claimer @entity {
+  id: Bytes!
+  epoch: BigInt! # uint256
+  project: Bytes! # address
+  claimer: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type PoolClaim @entity {
+  id: Bytes!
+  pool: Bytes!
+  user: Bytes!
+  token: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type WhitelistedNFT @entity {
+  id: Bytes!
+  pool: Bytes!
+  nft: Bytes!
+  weight: BigInt!
+  addedBlockNumber: BigInt!
+  addedBlockTimestamp: BigInt!
+  addedTransactionHash: Bytes!
+  updatedBlockNumber: BigInt
+  updatedBlockTimestamp: BigInt
+  updatedTransactionHash: Bytes
+}
+
+type ProposalExecuted @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  slashBps: Int!
+  blacklist: Boolean!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Voted @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  voter: Bytes!
+  weight: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type VoterRewardNotified @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type VoterRewarded @entity {
+  id: Bytes!
+  epoch: BigInt!
+  project: Bytes!
+  voter: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}

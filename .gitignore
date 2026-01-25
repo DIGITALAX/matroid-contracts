@@ -1,0 +1,54 @@
+# Dependencies
+lib/
+**/lib/
+
+# Environment files
+*.env
+.env.*
+**/*.env
+scripts/
+**/scripts/
+abis/
+**/abis/
+data/
+**/data/
+
+**/storage/
+storage/
+
+# Build outputs
+out/
+**/out/
+zkout/
+**/zkout/
+cache/
+**/cache/
+
+# Forge/Foundry specific
+broadcast/
+**/broadcast/
+
+# Node modules 
+node_modules/
+**/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-*
+
+# Logs
+*.log
+logs/
+**/logs/
+
+
+/ioniccontracts
+notes.md

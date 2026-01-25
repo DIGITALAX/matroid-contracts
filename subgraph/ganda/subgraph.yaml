@@ -1,0 +1,102 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: GandaRegistry
+    network: anvil
+    source:
+      address: "0x9a676e781a523b5d0c0e43731313a708cb607508"
+      abi: GandaRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - GandaDeactivated
+        - GandaRegistered
+        - GandaUpdated
+        - ReactionSubmitted
+      abis:
+        - name: GandaRegistry
+          file: ./abis/GandaRegistry.json
+      eventHandlers:
+        - event: GandaDeactivated(indexed uint256)
+          handler: handleGandaDeactivated
+        - event: GandaRegistered(indexed uint256,indexed address,string)
+          handler: handleGandaRegistered
+        - event: GandaUpdated(indexed uint256,string)
+          handler: handleGandaUpdated
+        - event: ReactionSubmitted(indexed uint256,indexed uint256,indexed address)
+          handler: handleReactionSubmitted
+      file: ./src/ganda-registry.ts
+  - kind: ethereum
+    name: GandaReactionPacks
+    network: anvil
+    source:
+      address: "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0"
+      abi: GandaReactionPacks
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Approval
+        - ApprovalForAll
+        - PackPurchased
+        - ProjectRegistered
+        - ReactionAdded
+        - ReactionPackCreated
+        - Transfer
+      abis:
+        - name: GandaReactionPacks
+          file: ./abis/GandaReactionPacks.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,indexed uint256)
+          handler: handleApproval
+        - event: ApprovalForAll(indexed address,indexed address,bool)
+          handler: handleApprovalForAll
+        - event: PackPurchased(indexed address,indexed uint256,indexed uint256,uint256,uint256)
+          handler: handlePackPurchased
+        - event: ProjectRegistered(bytes32)
+          handler: handleProjectRegistered
+        - event: ReactionAdded(indexed uint256,indexed uint256,string)
+          handler: handleReactionAdded
+        - event: ReactionPackCreated(indexed address,indexed uint256,uint256,uint256,uint256)
+          handler: handleReactionPackCreated
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/ganda-reaction-packs.ts
+  - kind: ethereum
+    name: GandaDesigners
+    network: anvil
+    source:
+      address: "0xb7f8bc63bbcad18155201308c8f3540b07f84f5e"
+      abi: GandaDesigners
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DesignerDeactivated
+        - DesignerInvited
+        - DesignerURI
+        - ReactionPacksUpdated
+      abis:
+        - name: GandaDesigners
+          file: ./abis/GandaDesigners.json
+      eventHandlers:
+        - event: DesignerDeactivated(indexed uint256,indexed address)
+          handler: handleDesignerDeactivated
+        - event: DesignerInvited(indexed address,indexed address,indexed uint256)
+          handler: handleDesignerInvited
+        - event: DesignerURI(indexed uint256,string)
+          handler: handleDesignerURI
+        - event: ReactionPacksUpdated(indexed address)
+          handler: handleReactionPacksUpdated
+      file: ./src/ganda-designers.ts

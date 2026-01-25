@@ -1,0 +1,255 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: MatroidRegistry
+    network: anvil
+    source:
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431"
+      abi: MatroidRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Project
+        - ProjectPoolsCreated
+        - TokenFlow
+      abis:
+        - name: MatroidRegistry
+          file: ./abis/MatroidRegistry.json
+      eventHandlers:
+        - event: ClaimerUpdated(indexed address,indexed address,bool)
+          handler: handleClaimerUpdated
+        - event: FlowRecorded(indexed address,indexed address,indexed address,uint256,bool)
+          handler: handleFlowRecorded
+        - event: ProjectPoolsCreated(indexed address,address,address)
+          handler: handleProjectPoolsCreated
+        - event: ProjectRegistered(indexed address,bytes32)
+          handler: handleProjectRegistered
+        - event: RewardSplitsUpdated(indexed address,uint16,uint16,uint16)
+          handler: handleRewardSplitsUpdated
+      file: ./src/matroid-registry.ts
+  - kind: ethereum
+    name: MatroidKit
+    network: anvil
+    source:
+      address: "0x8ce361602b935680e8dec218b820ff5056beb7af"
+      abi: MatroidKit
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - MatroidIn
+        - MatroidOut
+        - MatroidKitProjectRegistered
+      abis:
+        - name: MatroidKit
+          file: ./abis/MatroidKit.json
+      eventHandlers:
+        - event: MatroidIn(indexed address,indexed address,indexed address,uint256)
+          handler: handleMatroidIn
+        - event: MatroidOut(indexed address,indexed address,indexed address,uint256)
+          handler: handleMatroidOut
+        - event: ProjectRegistered(indexed address,bytes32)
+          handler: handleProjectRegistered
+      file: ./src/matroid-kit.ts
+  - kind: ethereum
+    name: Treasury
+    network: anvil
+    source:
+      address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e"
+      abi: Treasury
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - ClaimableCleared
+        - ClaimableSet
+        - TreasuryClaimed
+        - DistributionStarted
+        - EpochFinalized
+        - FundsDeposited
+        - ProjectSlash
+        - SlashResolve
+        - SlashRewardNotified
+        - SlashingContractUpdated
+        - TargetDurationUpdated
+        - TargetReconciled
+        - TargetUpdated
+      abis:
+        - name: Treasury
+          file: ./abis/Treasury.json
+      eventHandlers:
+        - event: ClaimableCleared(indexed uint256,indexed address)
+          handler: handleClaimableCleared
+        - event: ClaimableSet(indexed uint256,indexed address,uint256)
+          handler: handleClaimableSet
+        - event: Claimed(indexed uint256,indexed address,indexed address,uint256)
+          handler: handleClaimed
+        - event: DistributionStarted(uint256)
+          handler: handleDistributionStarted
+        - event: EpochFinalized(indexed uint256,uint256,uint256,uint256)
+          handler: handleEpochFinalized
+        - event: FundsDeposited(indexed address,uint256)
+          handler: handleFundsDeposited
+        - event: ProjectSlashed(indexed uint256,indexed address,uint16,bool)
+          handler: handleProjectSlashed
+        - event: SlashResolved(indexed uint256,indexed address,uint256)
+          handler: handleSlashResolved
+        - event: SlashRewardNotified(indexed uint256,indexed address,uint256)
+          handler: handleSlashRewardNotified
+        - event: SlashingContractUpdated(indexed address,indexed address)
+          handler: handleSlashingContractUpdated
+        - event: TargetDurationUpdated(uint256,uint256)
+          handler: handleTargetDurationUpdated
+        - event: TargetReconciled(uint256,uint256)
+          handler: handleTargetReconciled
+        - event: TargetUpdated(uint256,uint256)
+          handler: handleTargetUpdated
+      file: ./src/treasury.ts
+  - kind: ethereum
+    name: SlashingCouncil
+    network: anvil
+    source:
+      address: "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d"
+      abi: SlashingCouncil
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - ProposalExecuted
+        - ProposalResolved
+        - Voted
+        - VoterRewardNotified
+        - VoterRewarded
+      abis:
+        - name: SlashingCouncil
+          file: ./abis/SlashingCouncil.json
+      eventHandlers:
+        - event: ProposalExecuted(indexed uint256,indexed address,uint16,bool)
+          handler: handleProposalExecuted
+        - event: ProposalResolved(indexed uint256,indexed address,bool)
+          handler: handleProposalResolved
+        - event: Voted(indexed uint256,indexed address,indexed address,uint256)
+          handler: handleVoted
+        - event: VoterRewardNotified(indexed uint256,indexed address,uint256)
+          handler: handleVoterRewardNotified
+        - event: VoterRewarded(indexed uint256,indexed address,indexed address,uint256)
+          handler: handleVoterRewarded
+      file: ./src/slashing-council.ts
+  - kind: ethereum
+    name: GlobalStakingPool
+    network: anvil
+    source:
+      address: "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
+      abi: GlobalStakingPool
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - GlobalClaimed
+        - GlobalRewardNotified
+        - Staked
+        - Staker
+        - Unstaked
+      abis:
+        - name: GlobalStakingPool
+          file: ./abis/GlobalStakingPool.json
+      eventHandlers:
+        - event: Claimed(indexed address,uint256)
+          handler: handleClaimed
+        - event: RewardNotified(uint256)
+          handler: handleRewardNotified
+        - event: Staked(indexed address,uint256)
+          handler: handleStaked
+        - event: Unstaked(indexed address,uint256)
+          handler: handleUnstaked
+      file: ./src/global-staking-pool.ts
+templates:
+  - name: ProjectStakingPool
+    kind: ethereum/contract
+    network: anvil
+    source:
+      abi: ProjectStakingPool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/project-staking-pool.ts
+      entities:
+        - ProjectPoolERC20
+        - ERC20Staker
+      abis:
+        - name: ProjectStakingPool
+          file: ./abis/ProjectStakingPool.json
+      eventHandlers:
+        - event: RewardTokenAdded(indexed address)
+          handler: handleRewardTokenAdded
+        - event: RewardTokenRemoved(indexed address)
+          handler: handleRewardTokenRemoved
+        - event: RewardNotified(indexed address,uint256)
+          handler: handleRewardNotified
+        - event: Staked(indexed address,uint256)
+          handler: handleStaked
+        - event: Unstaked(indexed address,uint256)
+          handler: handleUnstaked
+        - event: Claimed(indexed address,indexed address,uint256)
+          handler: handleClaimed
+  - name: ProjectNFTStakingPool
+    kind: ethereum/contract
+    network: anvil
+    source:
+      abi: ProjectNFTStakingPool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/project-nft-staking-pool.ts
+      entities:
+        - ProjectPoolNFT
+        - NFTStaker
+      abis:
+        - name: ProjectNFTStakingPool
+          file: ./abis/ProjectNFTStakingPool.json
+      eventHandlers:
+        - event: RewardTokenAdded(indexed address)
+          handler: handleRewardTokenAdded
+        - event: RewardTokenRemoved(indexed address)
+          handler: handleRewardTokenRemoved
+        - event: RewardNotified(indexed address,uint256)
+          handler: handleRewardNotified
+        - event: NftWhitelisted(indexed address,uint256)
+          handler: handleNftWhitelisted
+        - event: NftWeightUpdated(indexed address,uint256)
+          handler: handleNftWeightUpdated
+        - event: NftStaked(indexed address,indexed address,uint256,uint256)
+          handler: handleNftStaked
+        - event: NftUnstaked(indexed address,indexed address,uint256,uint256)
+          handler: handleNftUnstaked
+        - event: Claimed(indexed address,indexed address,uint256)
+          handler: handleClaimed
+  - name: ProjectMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/ds-handlers.ts
+      handler: handleMetadata
+      entities:
+        - ProjectMetadata
+      abis:
+        - name: ProjectStakingPool
+          file: ./abis/ProjectStakingPool.json
