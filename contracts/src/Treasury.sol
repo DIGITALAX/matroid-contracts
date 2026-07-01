@@ -30,6 +30,8 @@ contract Treasury is ReentrancyGuard {
     address public owner;
     GlobalStakingPool public globalPool;
     address public slashingContract;
+    address public governance;
+    address public anonGovernance;
     uint256 public immutable claimWindow;
     uint256 public targetTotal;
     uint256 public targetDuration;
@@ -37,6 +39,8 @@ contract Treasury is ReentrancyGuard {
     uint256 public totalDistributed;
     uint256 public baseBudget;
     uint256 public perProjectBudget;
+    uint256 public lastActivity;
+    uint256 public constant STALE_PERIOD = 365 days;
 
     mapping(uint256 => mapping(address => uint256)) private _claimable;
     mapping(uint256 => mapping(address => bool)) private _claimableSet;
@@ -46,6 +50,9 @@ contract Treasury is ReentrancyGuard {
     mapping(uint256 => mapping(address => uint256)) private _slashRewards;
     mapping(uint256 => mapping(address => bool)) private _slashResolved;
     mapping(address => bool) private _blacklisted;
+    mapping(uint256 => uint256) private _finalizeCursor;
+    mapping(uint256 => uint256) private _finalizeCount;
+    mapping(uint256 => bool) private _finalizeStarted;
 
     event FundsDeposited(address indexed from, uint256 amount);
     event TargetUpdated(uint256 oldTarget, uint256 newTarget);
@@ -60,6 +67,10 @@ contract Treasury is ReentrancyGuard {
     event ProjectSlashed(uint256 indexed epoch, address indexed project, uint16 slashBps, bool blacklisted);
     event SlashRewardNotified(uint256 indexed epoch, address indexed project, uint256 amount);
     event SlashResolved(uint256 indexed epoch, address indexed project, uint256 voterReward);
+    event GovernanceSet(address indexed governance);
+    event AnonGovernanceSet(address indexed anonGovernance);
+    event OwnershipRenounced();
+    event StaleDrained(uint256 amount);
 
     constructor(
         address monaToken,
@@ -97,10 +108,23 @@ contract Treasury is ReentrancyGuard {
         targetDuration = targetDurationSeconds;
         baseBudget = baseBudgetAmount;
         perProjectBudget = perProjectBudgetAmount;
+        lastActivity = block.timestamp;
     }
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert MatroidErrors.NotOwner();
+        _;
+    }
+
+    modifier onlyGovernance() {
+        if (msg.sender != governance) revert MatroidErrors.NotGovernance();
+        _;
+    }
+
+    modifier onlyAnyGovernance() {
+        if (msg.sender != governance && msg.sender != anonGovernance) {
+            revert MatroidErrors.NotGovernance();
+        }
         _;
     }
 
@@ -115,13 +139,6 @@ contract Treasury is ReentrancyGuard {
         emit FundsDeposited(msg.sender, amount);
     }
 
-    function setTargetTotal(uint256 newTarget) external onlyOwner {
-        if (newTarget < targetTotal) revert MatroidErrors.ZeroAmount();
-        uint256 oldTarget = targetTotal;
-        targetTotal = newTarget;
-        emit TargetUpdated(oldTarget, newTarget);
-    }
-
     function reconcileTarget() external {
         uint256 available = mona.balanceOf(address(this)) + totalDistributed;
         if (available <= targetTotal) return;
@@ -130,24 +147,44 @@ contract Treasury is ReentrancyGuard {
         emit TargetReconciled(oldTarget, available);
     }
 
-    function setTargetDuration(uint256 newDuration) external onlyOwner {
-        if (newDuration < targetDuration) revert MatroidErrors.InvalidDuration();
-        uint256 oldDuration = targetDuration;
-        targetDuration = newDuration;
-        emit TargetDurationUpdated(oldDuration, newDuration);
-    }
-
-    function setBudgets(uint256 newBaseBudget, uint256 newPerProjectBudget) external onlyOwner {
+    function setBudgets(uint256 newBaseBudget, uint256 newPerProjectBudget) external onlyAnyGovernance {
         if (newBaseBudget == 0 || newPerProjectBudget == 0) revert MatroidErrors.ZeroAmount();
         baseBudget = newBaseBudget;
         perProjectBudget = newPerProjectBudget;
     }
 
+    function extendDuration(uint256 newDuration) external onlyAnyGovernance {
+        if (newDuration <= targetDuration) revert MatroidErrors.InvalidDuration();
+        uint256 oldDuration = targetDuration;
+        targetDuration = newDuration;
+        emit TargetDurationUpdated(oldDuration, newDuration);
+    }
+
     function setSlashingContract(address slashing) external onlyOwner {
         if (slashing == address(0)) revert MatroidErrors.ZeroAddress();
-        address old = slashingContract;
+        if (slashingContract != address(0)) revert MatroidErrors.AlreadySet();
         slashingContract = slashing;
-        emit SlashingContractUpdated(old, slashing);
+        emit SlashingContractUpdated(address(0), slashing);
+    }
+
+    function setGovernance(address governanceAddress) external onlyOwner {
+        if (governanceAddress == address(0)) revert MatroidErrors.ZeroAddress();
+        if (governance != address(0)) revert MatroidErrors.AlreadySet();
+        governance = governanceAddress;
+        emit GovernanceSet(governanceAddress);
+    }
+
+    function setAnonGovernance(address anonGovernanceAddress) external onlyOwner {
+        if (anonGovernanceAddress == address(0)) revert MatroidErrors.ZeroAddress();
+        if (anonGovernance != address(0)) revert MatroidErrors.AlreadySet();
+        anonGovernance = anonGovernanceAddress;
+        emit AnonGovernanceSet(anonGovernanceAddress);
+    }
+
+    function renounceOwnership() external onlyOwner {
+        if (governance == address(0)) revert MatroidErrors.GovernanceNotSet();
+        owner = address(0);
+        emit OwnershipRenounced();
     }
 
     function getEpochData(uint256 epoch) external view returns (MatroidLibrary.EpochData memory) {
@@ -220,36 +257,57 @@ contract Treasury is ReentrancyGuard {
     }
 
     function finalizeEpoch(uint256 epoch) external {
+        _finalizeEpochBatch(epoch, 0);
+    }
+
+    function finalizeEpochBatch(uint256 epoch, uint256 maxProjects) external {
+        _finalizeEpochBatch(epoch, maxProjects);
+    }
+
+    function _finalizeEpochBatch(uint256 epoch, uint256 maxProjects) internal {
         MatroidLibrary.EpochData storage data = _epochData[epoch];
         if (data.finalized) return;
 
         (, uint256 end) = epochBounds(epoch);
         if (block.timestamp <= end) revert MatroidErrors.ClaimNotAvailable();
 
-        uint256 projectCount = registry.projectCount();
-        uint256 totalScore;
-        uint256 activeProjects;
-        uint256 totalUniqueUsers;
+        if (!_finalizeStarted[epoch]) {
+            _finalizeStarted[epoch] = true;
+            _finalizeCount[epoch] = registry.projectCount();
+        }
 
-        for (uint256 i = 0; i < projectCount; i++) {
-            address project = registry.projectAt(i);
+        uint256 count = _finalizeCount[epoch];
+        uint256 cursor = _finalizeCursor[epoch];
+        uint256 remaining = maxProjects == 0 ? type(uint256).max : maxProjects;
+        uint256 processed;
+
+        uint256 totalScore = data.totalScore;
+        uint256 activeProjects = data.activeProjects;
+        uint256 totalUniqueUsers = data.totalUniqueUsers;
+
+        while (cursor < count && processed < remaining) {
+            address project = registry.projectAt(cursor);
             uint256 scoreValue = scorer.score(project, epoch);
             if (scoreValue > 0) {
                 totalScore += scoreValue;
                 activeProjects += 1;
             }
-            MatroidLibrary.EpochStats memory stats = registry.getEpochStats(project, epoch);
-            totalUniqueUsers += stats.monaUniqueUsers;
+            totalUniqueUsers += registry.getEpochStats(project, epoch).monaUniqueUsers;
+            cursor += 1;
+            processed += 1;
         }
 
-        uint256 budget = epochBudget(totalScore, activeProjects);
-        data.finalized = true;
         data.totalScore = totalScore;
         data.activeProjects = activeProjects;
-        data.budget = budget;
-        data.finalizedAt = block.timestamp;
         data.totalUniqueUsers = totalUniqueUsers;
-        emit EpochFinalized(epoch, totalScore, activeProjects, budget);
+        _finalizeCursor[epoch] = cursor;
+
+        if (cursor < count) return;
+
+        data.budget = epochBudget(totalScore, activeProjects);
+        data.finalized = true;
+        data.finalizedAt = block.timestamp;
+        emit EpochFinalized(epoch, totalScore, activeProjects, data.budget);
     }
 
     function applySlash(uint256 epoch, address project, uint16 slashBps, bool blacklist) external {
@@ -288,6 +346,17 @@ contract Treasury is ReentrancyGuard {
         if (_claimable[epoch][project] == 0) return;
         _claimable[epoch][project] = 0;
         emit ClaimableCleared(epoch, project);
+    }
+
+    function drainStale() external nonReentrant {
+        if (block.timestamp <= lastActivity + STALE_PERIOD) revert MatroidErrors.ClaimNotAvailable();
+        uint256 amount = mona.balanceOf(address(this));
+        if (amount == 0) revert MatroidErrors.ZeroAmount();
+        lastActivity = block.timestamp;
+        mona.forceApprove(address(globalPool), amount);
+        globalPool.notifyReward(amount);
+        mona.forceApprove(address(globalPool), 0);
+        emit StaleDrained(amount);
     }
 
     function currentEpoch() public view returns (uint256) {
@@ -334,6 +403,7 @@ contract Treasury is ReentrancyGuard {
         }
         if (amount == 0) revert MatroidErrors.ZeroAmount();
         _claimable[epoch][project] = 0;
+        lastActivity = block.timestamp;
         if (distributionStart == 0) {
             distributionStart = block.timestamp;
             emit DistributionStarted(distributionStart);
@@ -425,6 +495,7 @@ contract Treasury is ReentrancyGuard {
         }
         if (amount == 0) revert MatroidErrors.ZeroAmount();
         _claimable[epoch][project] = 0;
+        lastActivity = block.timestamp;
         if (distributionStart == 0) {
             distributionStart = block.timestamp;
             emit DistributionStarted(distributionStart);

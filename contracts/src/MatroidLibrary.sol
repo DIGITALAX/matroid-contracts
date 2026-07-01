@@ -73,6 +73,7 @@ contract MatroidLibrary {
 
     struct EpochStats {
         uint256 monaUniqueUsers;
+        uint256 weightedUniqueUsers;
         uint256 monaRecurringUsers;
         uint256 monaTxCount;
         uint256 monaTotalVolume;

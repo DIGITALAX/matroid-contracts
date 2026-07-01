@@ -31,4 +31,15 @@ contract MatroidErrors {
     error NotNFTOwner();
     error NFTAlreadyStaked();
     error NFTNotStaked();
+    error ProposalNotFound();
+    error AlreadyVoted();
+    error NotVoted();
+    error VoteWindowOpen();
+    error AlreadyExecuted();
+    error InvalidThreshold();
+    error NotGovernance();
+    error GovernanceNotSet();
+    error UnknownRoot();
+    error NullifierUsed();
+    error BadProof();
 }

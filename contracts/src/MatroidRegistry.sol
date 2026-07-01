@@ -47,6 +47,7 @@ contract MatroidRegistry is ReentrancyGuard {
     mapping(address => mapping(uint256 => mapping(address => mapping(address => bool))))
         private _epochOtherTokenUserSeen;
     address[] private _projectList;
+    mapping(address => bool) private _listed;
 
     event ProjectRegistered(address indexed project, bytes32 metadata);
     event ClaimerUpdated(
@@ -72,6 +73,10 @@ contract MatroidRegistry is ReentrancyGuard {
         uint256 amount,
         bool isIn
     );
+    event ProjectLeft(address indexed project);
+    event ProjectErased(address indexed project);
+    event EpochErased(address indexed project, uint256 indexed epoch);
+    event ChipWeightCredited(address indexed project, uint256 indexed epoch);
 
     constructor(
         address monaToken,
@@ -124,7 +129,10 @@ contract MatroidRegistry is ReentrancyGuard {
         info.project = project;
         info.metadata = metadata;
         info.registeredAt = uint64(block.timestamp);
-        _projectList.push(project);
+        if (!_listed[project]) {
+            _projectList.push(project);
+            _listed[project] = true;
+        }
 
         if (pool) {
             _createPool(project);
@@ -135,6 +143,32 @@ contract MatroidRegistry is ReentrancyGuard {
 
     function createProjectPool() external {
         _createPool(msg.sender);
+    }
+
+    function leave() external {
+        MatroidLibrary.Project storage info = _projects[msg.sender];
+        if (!info.registered) revert MatroidErrors.ProjectNotRegistered();
+        info.registered = false;
+        delete _epochStats[msg.sender][currentEpoch()];
+        emit ProjectLeft(msg.sender);
+    }
+
+    function eraseSelf() external {
+        if (!_listed[msg.sender]) revert MatroidErrors.ProjectNotRegistered();
+        delete _projects[msg.sender];
+        delete _epochStats[msg.sender][currentEpoch()];
+        emit ProjectErased(msg.sender);
+    }
+
+    function eraseEpoch(uint256 epoch) external {
+        if (!_listed[msg.sender]) revert MatroidErrors.ProjectNotRegistered();
+        delete _epochStats[msg.sender][epoch];
+        emit EpochErased(msg.sender, epoch);
+    }
+
+    function creditChipWeight(address project) external onlyMatroidKit {
+        _epochStats[project][currentEpoch()].weightedUniqueUsers += 1;
+        emit ChipWeightCredited(project, currentEpoch());
     }
 
     function _createPool(address project) internal {
@@ -423,6 +457,7 @@ contract MatroidRegistry is ReentrancyGuard {
         if (!_epochMonaUserSeen[project][epoch][user]) {
             _epochMonaUserSeen[project][epoch][user] = true;
             _epochInfo.monaUniqueUsers += 1;
+            _epochInfo.weightedUniqueUsers += 1;
             if (epoch > 0 && _epochMonaUserSeen[project][epoch - 1][user]) {
                 _epochInfo.monaRecurringUsers += 1;
             }

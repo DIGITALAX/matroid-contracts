@@ -178,6 +178,120 @@ dataSources:
         - event: Unstaked(indexed address,uint256)
           handler: handleUnstaked
       file: ./src/global-staking-pool.ts
+  - kind: ethereum
+    name: MatroidGovernance
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: MatroidGovernance
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - BudgetProposal
+        - BudgetVote
+      abis:
+        - name: MatroidGovernance
+          file: ./abis/MatroidGovernance.json
+      eventHandlers:
+        - event: ProposalCreated(indexed uint256,uint256,uint256,uint256)
+          handler: handleProposalCreated
+        - event: Voted(indexed uint256,indexed address,bool,uint256)
+          handler: handleVoted
+        - event: ProposalExecuted(indexed uint256,bool,bool)
+          handler: handleProposalExecuted
+      file: ./src/matroid-governance.ts
+  - kind: ethereum
+    name: MatroidAnonGovernance
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: MatroidAnonGovernance
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - AnonBudgetProposal
+      abis:
+        - name: MatroidAnonGovernance
+          file: ./abis/MatroidAnonGovernance.json
+      eventHandlers:
+        - event: ProposalCreated(indexed uint256,uint256,uint256,uint256,uint64)
+          handler: handleProposalCreated
+        - event: Voted(indexed uint256,uint8,bytes32)
+          handler: handleVoted
+        - event: Executed(indexed uint256,bool,bool)
+          handler: handleExecuted
+      file: ./src/matroid-anon-governance.ts
+  - kind: ethereum
+    name: IdentityRegistry
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: IdentityRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Enrollment
+      abis:
+        - name: IdentityRegistry
+          file: ./abis/IdentityRegistry.json
+      eventHandlers:
+        - event: Enrolled(indexed bytes32,uint32,bytes32)
+          handler: handleEnrolled
+      file: ./src/identity-registry.ts
+  - kind: ethereum
+    name: MonaBalanceTree
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: MonaBalanceTree
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - BalanceLeaf
+      abis:
+        - name: MonaBalanceTree
+          file: ./abis/MonaBalanceTree.json
+      eventHandlers:
+        - event: Registered(indexed address,uint256,uint32,bytes32)
+          handler: handleRegistered
+      file: ./src/mona-balance-tree.ts
+  - kind: ethereum
+    name: SponsorVault
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: SponsorVault
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - SponsorVault
+        - Sponsor
+      abis:
+        - name: SponsorVault
+          file: ./abis/SponsorVault.json
+      eventHandlers:
+        - event: Deposited(indexed address,uint256,uint256)
+          handler: handleDeposited
+        - event: RewardAdded(uint256,uint256)
+          handler: handleRewardAdded
+        - event: Claimed(indexed address,uint256)
+          handler: handleClaimed
+      file: ./src/sponsor-vault.ts
 templates:
   - name: ProjectStakingPool
     kind: ethereum/contract

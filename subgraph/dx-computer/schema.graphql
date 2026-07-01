@@ -1,0 +1,184 @@
+type Kit @entity {
+  id: ID!
+  kitId: BigInt!
+  parentId: BigInt!
+  mode: Int!
+  designHash: Bytes!
+  contentUri: String!
+  version: BigInt!
+  revoked: Boolean!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+  transactionHash: Bytes!
+  versions: [KitVersion!]! @derivedFrom(field: "kit")
+  grants: [Grant!]! @derivedFrom(field: "kit")
+  offers: [Offer!]! @derivedFrom(field: "kit")
+  agents: [AgentKit!]! @derivedFrom(field: "kit")
+}
+
+type KitVersion @entity(immutable: true) {
+  id: ID!
+  kit: Kit!
+  version: BigInt!
+  designHash: Bytes!
+  contentUri: String!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Grant @entity {
+  id: ID!
+  grantId: BigInt!
+  kitId: BigInt!
+  kit: Kit!
+  creator: Bytes!
+  purposeHash: Bytes!
+  contentUri: String!
+  budget: BigInt!
+  raised: BigInt!
+  totalShares: BigInt!
+  salesShareBps: Int!
+  funders: Int!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type GrantFunder @entity {
+  id: ID!
+  grant: Grant!
+  funder: Bytes!
+  shares: BigInt!
+}
+
+type Treeliner @entity {
+  id: ID!
+  address: Bytes!
+  totalStaked: BigInt!
+  totalClaimed: BigInt!
+  grantsFunded: Int!
+}
+
+type Agent @entity {
+  id: ID!
+  agentId: BigInt!
+  owner: Bytes!
+  modelHash: Bytes!
+  hardwareHash: Bytes!
+  contentUri: String!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+  kits: [AgentKit!]! @derivedFrom(field: "agent")
+  results: [AgentResult!]! @derivedFrom(field: "agent")
+}
+
+type AgentKit @entity {
+  id: ID!
+  agent: Agent!
+  kit: Kit!
+  kitId: BigInt!
+  included: Boolean!
+}
+
+type AgentResult @entity {
+  id: ID!
+  agent: Agent!
+  kitId: BigInt!
+  resultHash: Bytes!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Cyberswagman @entity {
+  id: ID!
+  totalClaimed: BigInt!
+}
+
+type CyberWeight @entity {
+  id: ID!
+  swagman: Bytes!
+  kitId: BigInt!
+  weight: BigInt!
+}
+
+type Enrollment @entity(immutable: true) {
+  id: ID!
+  commitment: Bytes!
+  leafIndex: Int!
+  root: Bytes!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BalanceLeaf @entity(immutable: true) {
+  id: ID!
+  holder: Bytes!
+  balance: BigInt!
+  leafIndex: Int!
+  root: Bytes!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type CouncilProposal @entity {
+  id: ID!
+  proposalId: BigInt!
+  kind: Int!
+  contentUri: String!
+  target: Bytes!
+  project: Bytes!
+  banned: Boolean!
+  value: BigInt!
+  extra: BigInt!
+  start: BigInt!
+  end: BigInt!
+  executed: Boolean!
+  yes: BigInt!
+  no: BigInt!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Content @entity {
+  id: ID!
+  contentId: BigInt!
+  author: Bytes!
+  ownerTag: Bytes!
+  canonicalTag: Bytes!
+  contentHash: Bytes!
+  contentUri: String!
+  anonymous: Boolean!
+  revoked: Boolean!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Offer @entity {
+  id: ID!
+  offerId: BigInt!
+  fabricator: Bytes!
+  kitId: BigInt!
+  kit: Kit!
+  version: BigInt!
+  designHash: Bytes!
+  contentUri: String!
+  price: BigInt!
+  sliceBps: Int!
+  quantity: BigInt!
+  grantId: BigInt!
+  grantBps: Int!
+  grantLinked: Boolean!
+  exists: Boolean!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  transactionHash: Bytes!
+}

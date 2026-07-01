@@ -24,6 +24,96 @@ type Global @entity {
   projects: [Project!]
 }
 
+type BudgetProposal @entity {
+  id: Bytes!
+  proposalId: BigInt!
+  baseBudget: BigInt!
+  perProjectBudget: BigInt!
+  newDuration: BigInt!
+  endTime: BigInt!
+  yesWeight: BigInt!
+  noWeight: BigInt!
+  executed: Boolean!
+  passed: Boolean
+  applied: Boolean
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BudgetVote @entity {
+  id: Bytes!
+  proposal: BudgetProposal!
+  voter: Bytes!
+  inFavor: Boolean!
+  amount: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type AnonBudgetProposal @entity {
+  id: Bytes!
+  proposalId: BigInt!
+  baseBudget: BigInt!
+  perProjectBudget: BigInt!
+  newDuration: BigInt!
+  end: BigInt!
+  yes: BigInt!
+  no: BigInt!
+  executed: Boolean!
+  passed: Boolean
+  applied: Boolean
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Enrollment @entity(immutable: true) {
+  id: Bytes!
+  commitment: Bytes!
+  leafIndex: Int!
+  root: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BalanceLeaf @entity(immutable: true) {
+  id: ID!
+  holder: Bytes!
+  balance: BigInt!
+  leafIndex: Int!
+  root: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type SponsorVault @entity {
+  id: Bytes!
+  totalPoints: BigInt!
+  accRewardPerPoint: BigInt!
+  totalDeposited: BigInt!
+  totalRewards: BigInt!
+  totalClaimed: BigInt!
+  sponsorCount: Int!
+  sponsors: [Sponsor!]! @derivedFrom(field: "vault")
+}
+
+type Sponsor @entity {
+  id: Bytes!
+  vault: SponsorVault!
+  account: Bytes!
+  points: BigInt!
+  totalDeposited: BigInt!
+  totalClaimed: BigInt!
+  firstSeenTimestamp: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
 type TreasuryDeposit @entity {
   id: Bytes!
   from: Bytes! # address

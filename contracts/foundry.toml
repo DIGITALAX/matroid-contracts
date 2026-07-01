@@ -11,6 +11,7 @@ remappings = [
 optimizer = true
 optimizer_runs = 200
 via_ir = true
+skip = ["src/zk/MatroidPaymaster.sol"]
 
 [profile.default.zksync]
 compile = false

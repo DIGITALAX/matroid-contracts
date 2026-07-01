@@ -1,0 +1,208 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: KitRegistry
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: KitRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Kit
+      abis:
+        - name: KitRegistry
+          file: ./abis/KitRegistry.json
+      eventHandlers:
+        - event: KitPublished(indexed uint256,indexed uint256,uint8,bytes32,string)
+          handler: handleKitPublished
+        - event: KitVersioned(indexed uint256,bytes32,uint64,string)
+          handler: handleKitVersioned
+        - event: KitRemoved(indexed uint256)
+          handler: handleKitRemoved
+      file: ./src/kit-registry.ts
+  - kind: ethereum
+    name: GrantRegistry
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: GrantRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Grant
+        - GrantFunder
+        - Treeliner
+      abis:
+        - name: GrantRegistry
+          file: ./abis/GrantRegistry.json
+      eventHandlers:
+        - event: GrantCreated(indexed uint256,indexed uint256,indexed address,bytes32,string,uint256,uint16)
+          handler: handleGrantCreated
+        - event: GrantFunded(indexed uint256,indexed address,uint256,uint256)
+          handler: handleGrantFunded
+        - event: GrantRemoved(indexed uint256)
+          handler: handleGrantRemoved
+        - event: Claimed(indexed uint256,indexed address,uint256)
+          handler: handleClaimed
+      file: ./src/grant-registry.ts
+  - kind: ethereum
+    name: PrefabMarket
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: PrefabMarket
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Offer
+      abis:
+        - name: PrefabMarket
+          file: ./abis/PrefabMarket.json
+      eventHandlers:
+        - event: OfferCreated(indexed uint256,indexed address,uint256,uint64,bytes32,string,uint256,uint16,uint256)
+          handler: handleOfferCreated
+        - event: OfferUpdated(indexed uint256,uint256,uint16,uint256)
+          handler: handleOfferUpdated
+        - event: OfferDeleted(indexed uint256)
+          handler: handleOfferDeleted
+        - event: GrantLinked(indexed uint256,indexed uint256,uint16)
+          handler: handleGrantLinked
+        - event: OrderPlaced(indexed uint256,indexed uint256,indexed address,address,bytes32)
+          handler: handleOrderPlaced
+      file: ./src/prefab-market.ts
+  - kind: ethereum
+    name: ContentRegistry
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: ContentRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Content
+      abis:
+        - name: ContentRegistry
+          file: ./abis/ContentRegistry.json
+      eventHandlers:
+        - event: Posted(indexed uint256,address,bytes32,bytes32,bytes32,string)
+          handler: handlePosted
+        - event: Updated(indexed uint256,bytes32,uint64,bool)
+          handler: handleUpdated
+      file: ./src/content-registry.ts
+  - kind: ethereum
+    name: CyberswagmanRegistry
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: CyberswagmanRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Agent
+        - AgentKit
+        - AgentResult
+        - Cyberswagman
+        - CyberWeight
+      abis:
+        - name: CyberswagmanRegistry
+          file: ./abis/CyberswagmanRegistry.json
+      eventHandlers:
+        - event: AgentRegistered(indexed uint256,indexed address,bytes32,bytes32,string)
+          handler: handleAgentRegistered
+        - event: AgentUpdated(indexed uint256,bytes32,bytes32)
+          handler: handleAgentUpdated
+        - event: SchemaChanged(indexed uint256,indexed uint256,bool)
+          handler: handleSchemaChanged
+        - event: ResultPosted(indexed uint256,indexed uint256,bytes32)
+          handler: handleResultPosted
+        - event: AgentDeleted(indexed uint256)
+          handler: handleAgentDeleted
+        - event: WeightSet(indexed uint256,indexed address,uint256)
+          handler: handleWeightSet
+        - event: Claimed(indexed uint256,indexed address,uint256)
+          handler: handleClaimed
+      file: ./src/cyberswagman-registry.ts
+  - kind: ethereum
+    name: SponsorCouncil
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: SponsorCouncil
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - CouncilProposal
+      abis:
+        - name: SponsorCouncil
+          file: ./abis/SponsorCouncil.json
+      eventHandlers:
+        - event: ProposalCreated(indexed uint256,uint8,indexed address,bool,uint256,uint64,string)
+          handler: handleProposalCreated
+        - event: Voted(indexed uint256,uint8,bytes32)
+          handler: handleVoted
+        - event: Executed(indexed uint256,uint8,indexed address)
+          handler: handleExecuted
+      file: ./src/sponsor-council.ts
+  - kind: ethereum
+    name: IdentityRegistry
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: IdentityRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Enrollment
+      abis:
+        - name: IdentityRegistry
+          file: ./abis/IdentityRegistry.json
+      eventHandlers:
+        - event: Enrolled(indexed bytes32,uint32,bytes32)
+          handler: handleEnrolled
+      file: ./src/identity-registry.ts
+  - kind: ethereum
+    name: MonaBalanceTree
+    network: anvil
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: MonaBalanceTree
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - BalanceLeaf
+      abis:
+        - name: MonaBalanceTree
+          file: ./abis/MonaBalanceTree.json
+      eventHandlers:
+        - event: Registered(indexed address,uint256,uint32,bytes32)
+          handler: handleRegistered
+      file: ./src/mona-balance-tree.ts

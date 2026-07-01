@@ -22,7 +22,7 @@ contract MatroidScorer {
             return 0;
         }
 
-        uint256 sqrtU = _sqrt(stats.monaUniqueUsers) * SCALE;
+        uint256 sqrtU = _sqrt(stats.weightedUniqueUsers) * SCALE;
         uint256 retention = (stats.monaRecurringUsers * SCALE) / stats.monaUniqueUsers;
         if (retention < SCALE / 2) {
             retention = SCALE / 2;
