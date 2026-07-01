@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {IVerifier} from "./IVerifier.sol";
-import {IdentityRegistry} from "./IdentityRegistry.sol";
+import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
 
 contract ContentRegistry {
     struct Content {
@@ -17,9 +17,11 @@ contract ContentRegistry {
         bool moderated;
     }
 
-    IVerifier public immutable commentVerifier;
+    uint256 public constant POST_SCOPE = uint256(keccak256("matroid.content-post"));
+
     IVerifier public immutable editVerifier;
-    IdentityRegistry public immutable registry;
+    ISemaphore public immutable semaphore;
+    uint256 public immutable groupId;
 
     uint256 public contentCount;
     mapping(uint256 => Content) public contents;
@@ -28,7 +30,7 @@ contract ContentRegistry {
     event Updated(uint256 indexed id, bytes32 contentHash, uint64 version, bool revoked);
     event Moderated(uint256 indexed id, bytes32 canonicalTag);
 
-    error UnknownRoot();
+    error BadScope();
     error BadProof();
     error NoContent();
     error AlreadyRevoked();
@@ -37,30 +39,25 @@ contract ContentRegistry {
     error NotAuthor();
 
     constructor(
-        address commentVerifierAddress,
         address editVerifierAddress,
-        address registryAddress
+        address semaphoreAddress,
+        uint256 groupId_
     ) {
-        commentVerifier = IVerifier(commentVerifierAddress);
         editVerifier = IVerifier(editVerifierAddress);
-        registry = IdentityRegistry(registryAddress);
+        semaphore = ISemaphore(semaphoreAddress);
+        groupId = groupId_;
     }
 
     function post(
-        bytes calldata proof,
-        bytes32 root,
+        ISemaphore.SemaphoreProof calldata proof,
         bytes32 contentHash,
         bytes32 ownerTag,
         bytes32 canonicalTag,
         string calldata contentUri
     ) external returns (uint256 id) {
-        if (!registry.isKnownRoot(root)) revert UnknownRoot();
-
-        bytes32[] memory pubInputs = new bytes32[](3);
-        pubInputs[0] = root;
-        pubInputs[1] = contentHash;
-        pubInputs[2] = ownerTag;
-        if (!commentVerifier.verify(proof, pubInputs)) revert BadProof();
+        if (proof.scope != POST_SCOPE) revert BadScope();
+        if (proof.message != uint256(contentHash)) revert BadProof();
+        if (!semaphore.verifyProof(groupId, proof)) revert BadProof();
 
         id = contentCount;
         contentCount = id + 1;

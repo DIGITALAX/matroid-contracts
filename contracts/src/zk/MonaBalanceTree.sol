@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {IPoseidon} from "./IPoseidon.sol";
 import {ISnapshotRegistry} from "./ISnapshotRegistry.sol";
+import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
 
 interface IERC20Balance {
     function balanceOf(address account) external view returns (uint256);
@@ -12,9 +13,12 @@ contract MonaBalanceTree is ISnapshotRegistry {
     uint256 public constant DEPTH = 20;
     uint256 public constant ROOT_HISTORY = 30;
     uint256 public constant MAX_BALANCE = type(uint128).max;
+    uint256 public constant BALANCE_LINK_SCOPE = uint256(keccak256("matroid.balance-link"));
 
     IPoseidon public immutable hasher;
     IERC20Balance public immutable mona;
+    ISemaphore public immutable semaphore;
+    uint256 public immutable groupId;
 
     bytes32[DEPTH] public zeros;
     bytes32[DEPTH] public filledSubtrees;
@@ -22,15 +26,19 @@ contract MonaBalanceTree is ISnapshotRegistry {
     uint32 public currentRootIndex;
     uint32 public nextLeafIndex;
 
-    event Registered(address indexed holder, uint256 balance, uint32 leafIndex, bytes32 root);
+    event Registered(uint256 indexed balanceKey, uint256 balance, uint32 leafIndex, bytes32 root);
 
     error NotAHolder();
     error BalanceTooLarge();
     error TreeFull();
+    error BadScope();
+    error BadProof();
 
-    constructor(address hasherAddress, address monaAddress) {
+    constructor(address hasherAddress, address monaAddress, address semaphoreAddress, uint256 groupId_) {
         hasher = IPoseidon(hasherAddress);
         mona = IERC20Balance(monaAddress);
+        semaphore = ISemaphore(semaphoreAddress);
+        groupId = groupId_;
 
         bytes32 zero = bytes32(0);
         for (uint256 i = 0; i < DEPTH; i++) {
@@ -41,15 +49,18 @@ contract MonaBalanceTree is ISnapshotRegistry {
         roots[0] = zero;
     }
 
-    function register(address holder) external returns (bytes32) {
-        uint256 bal = mona.balanceOf(holder);
+    function register(ISemaphore.SemaphoreProof calldata linkProof) external returns (bytes32) {
+        if (linkProof.scope != BALANCE_LINK_SCOPE) revert BadScope();
+        if (!semaphore.verifyProof(groupId, linkProof)) revert BadProof();
+
+        uint256 bal = mona.balanceOf(msg.sender);
         if (bal == 0) revert NotAHolder();
         if (bal > MAX_BALANCE) revert BalanceTooLarge();
 
-        bytes32 leaf = hasher.poseidon([bytes32(uint256(uint160(holder))), bytes32(bal)]);
+        bytes32 leaf = hasher.poseidon([bytes32(linkProof.nullifier), bytes32(bal)]);
         uint32 leafIndex = nextLeafIndex;
         bytes32 root = _insert(leaf);
-        emit Registered(holder, bal, leafIndex, root);
+        emit Registered(linkProof.nullifier, bal, leafIndex, root);
         return root;
     }
 

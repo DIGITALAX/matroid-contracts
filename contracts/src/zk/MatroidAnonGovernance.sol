@@ -2,8 +2,10 @@
 pragma solidity ^0.8.28;
 
 import {IVerifier} from "./IVerifier.sol";
+import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
+import {ISemaphoreGroups} from "@semaphore-protocol/contracts/interfaces/ISemaphoreGroups.sol";
 
-interface IRootSource {
+interface ISnapshotSource {
     function currentRoot() external view returns (bytes32);
 }
 
@@ -14,7 +16,7 @@ interface ITreasuryGovernance {
 
 contract MatroidAnonGovernance {
     struct Proposal {
-        bytes32 identityRoot;
+        uint256 identityRoot;
         bytes32 balanceRoot;
         uint64 start;
         uint64 end;
@@ -25,9 +27,12 @@ contract MatroidAnonGovernance {
         uint256 newDuration;
     }
 
+    uint256 public constant BALANCE_LINK_SCOPE = uint256(keccak256("matroid.balance-link"));
+
     IVerifier public immutable votingVerifier;
-    IRootSource public immutable identity;
-    IRootSource public immutable snapshots;
+    ISemaphore public immutable semaphore;
+    uint256 public immutable groupId;
+    ISnapshotSource public immutable snapshots;
     ITreasuryGovernance public immutable treasury;
     uint128 public immutable minBalance;
     uint64 public immutable votingWindow;
@@ -36,25 +41,26 @@ contract MatroidAnonGovernance {
 
     mapping(uint256 => Proposal) public proposals;
     uint256 public proposalCount;
-    mapping(uint256 => mapping(bytes32 => bool)) public usedNullifier;
     mapping(uint256 => mapping(uint8 => uint256)) public tally;
 
     event ProposalCreated(uint256 indexed id, uint256 baseBudget, uint256 perProjectBudget, uint256 newDuration, uint64 end);
-    event Voted(uint256 indexed id, uint8 choice, bytes32 nullifier);
+    event Voted(uint256 indexed id, uint8 choice, uint256 nullifier);
     event Executed(uint256 indexed id, bool passed, bool applied);
 
     error NoProposal();
     error VotingClosed();
     error VotingOpen();
     error InvalidChoice();
-    error AlreadyVoted();
     error AlreadyExecuted();
     error BadProof();
+    error BadScope();
+    error StaleRoot();
     error BelowFloor();
 
     constructor(
         address votingVerifierAddress,
-        address identityAddress,
+        address semaphoreAddress,
+        uint256 groupId_,
         address snapshotAddress,
         address treasuryAddress,
         uint128 minBalance_,
@@ -64,8 +70,9 @@ contract MatroidAnonGovernance {
     ) {
         if (quorum_ < quorumFloor_) revert BelowFloor();
         votingVerifier = IVerifier(votingVerifierAddress);
-        identity = IRootSource(identityAddress);
-        snapshots = IRootSource(snapshotAddress);
+        semaphore = ISemaphore(semaphoreAddress);
+        groupId = groupId_;
+        snapshots = ISnapshotSource(snapshotAddress);
         treasury = ITreasuryGovernance(treasuryAddress);
         minBalance = minBalance_;
         votingWindow = votingWindow_;
@@ -82,7 +89,7 @@ contract MatroidAnonGovernance {
         uint64 start = uint64(block.timestamp);
         uint64 end = start + votingWindow;
         proposals[id] = Proposal({
-            identityRoot: identity.currentRoot(),
+            identityRoot: ISemaphoreGroups(address(semaphore)).getMerkleTreeRoot(groupId),
             balanceRoot: snapshots.currentRoot(),
             start: start,
             end: end,
@@ -95,25 +102,34 @@ contract MatroidAnonGovernance {
         emit ProposalCreated(id, baseBudget, perProjectBudget, newDuration, end);
     }
 
-    function vote(bytes calldata proof, uint256 proposalId, uint8 choice, bytes32 nullifier) external {
+    function vote(
+        ISemaphore.SemaphoreProof calldata voteProof,
+        ISemaphore.SemaphoreProof calldata balanceLinkProof,
+        bytes calldata balanceZkProof,
+        uint256 proposalId
+    ) external {
         Proposal storage p = proposals[proposalId];
         if (!p.exists) revert NoProposal();
         if (block.timestamp < p.start || block.timestamp >= p.end) revert VotingClosed();
+        if (voteProof.scope != proposalId) revert BadScope();
+        if (voteProof.merkleTreeRoot != p.identityRoot) revert StaleRoot();
+        uint8 choice = uint8(voteProof.message);
         if (choice > 1) revert InvalidChoice();
-        if (usedNullifier[proposalId][nullifier]) revert AlreadyVoted();
 
-        bytes32[] memory pubInputs = new bytes32[](6);
-        pubInputs[0] = p.identityRoot;
-        pubInputs[1] = bytes32(proposalId);
-        pubInputs[2] = bytes32(uint256(choice));
-        pubInputs[3] = p.balanceRoot;
-        pubInputs[4] = bytes32(uint256(minBalance));
-        pubInputs[5] = nullifier;
-        if (!votingVerifier.verify(proof, pubInputs)) revert BadProof();
+        semaphore.validateProof(groupId, voteProof);
 
-        usedNullifier[proposalId][nullifier] = true;
+        if (balanceLinkProof.scope != BALANCE_LINK_SCOPE) revert BadScope();
+        if (balanceLinkProof.merkleTreeRoot != p.identityRoot) revert StaleRoot();
+        if (!semaphore.verifyProof(groupId, balanceLinkProof)) revert BadProof();
+
+        bytes32[] memory balancePub = new bytes32[](3);
+        balancePub[0] = p.balanceRoot;
+        balancePub[1] = bytes32(uint256(minBalance));
+        balancePub[2] = bytes32(balanceLinkProof.nullifier);
+        if (!votingVerifier.verify(balanceZkProof, balancePub)) revert BadProof();
+
         tally[proposalId][choice] += 1;
-        emit Voted(proposalId, choice, nullifier);
+        emit Voted(proposalId, choice, voteProof.nullifier);
     }
 
     function execute(uint256 proposalId) external {
