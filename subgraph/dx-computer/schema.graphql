@@ -108,17 +108,21 @@ type CyberWeight @entity {
 
 type Enrollment @entity(immutable: true) {
   id: ID!
-  commitment: Bytes!
+  commitment: BigInt!
   leafIndex: Int!
-  root: Bytes!
   createdAtBlock: BigInt!
   createdAtTimestamp: BigInt!
   transactionHash: Bytes!
 }
 
+type _EnrollmentCounter @entity {
+  id: ID!
+  count: Int!
+}
+
 type BalanceLeaf @entity(immutable: true) {
   id: ID!
-  holder: Bytes!
+  balanceKey: BigInt!
   balance: BigInt!
   leafIndex: Int!
   root: Bytes!

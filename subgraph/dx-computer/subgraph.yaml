@@ -161,7 +161,7 @@ dataSources:
       eventHandlers:
         - event: ProposalCreated(indexed uint256,uint8,indexed address,bool,uint256,uint64,string)
           handler: handleProposalCreated
-        - event: Voted(indexed uint256,uint8,bytes32)
+        - event: Voted(indexed uint256,uint8,uint256)
           handler: handleVoted
         - event: Executed(indexed uint256,uint8,indexed address)
           handler: handleExecuted
@@ -179,11 +179,12 @@ dataSources:
       language: wasm/assemblyscript
       entities:
         - Enrollment
+        - _EnrollmentCounter
       abis:
         - name: IdentityRegistry
           file: ./abis/IdentityRegistry.json
       eventHandlers:
-        - event: Enrolled(indexed bytes32,uint32,bytes32)
+        - event: Enrolled(indexed uint256,bytes32)
           handler: handleEnrolled
       file: ./src/identity-registry.ts
   - kind: ethereum
@@ -203,6 +204,6 @@ dataSources:
         - name: MonaBalanceTree
           file: ./abis/MonaBalanceTree.json
       eventHandlers:
-        - event: Registered(indexed address,uint256,uint32,bytes32)
+        - event: Registered(indexed uint256,uint256,uint32,bytes32)
           handler: handleRegistered
       file: ./src/mona-balance-tree.ts

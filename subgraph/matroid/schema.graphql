@@ -71,17 +71,21 @@ type AnonBudgetProposal @entity {
 
 type Enrollment @entity(immutable: true) {
   id: Bytes!
-  commitment: Bytes!
+  commitment: BigInt!
   leafIndex: Int!
-  root: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
 
+type _EnrollmentCounter @entity {
+  id: ID!
+  count: Int!
+}
+
 type BalanceLeaf @entity(immutable: true) {
   id: ID!
-  holder: Bytes!
+  balanceKey: BigInt!
   balance: BigInt!
   leafIndex: Int!
   root: Bytes!

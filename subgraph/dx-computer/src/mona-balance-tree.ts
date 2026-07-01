@@ -3,7 +3,7 @@ import { BalanceLeaf } from "../generated/schema";
 
 export function handleRegistered(event: RegisteredEvent): void {
   let leaf = new BalanceLeaf(event.params.leafIndex.toString());
-  leaf.holder = event.params.holder;
+  leaf.balanceKey = event.params.balanceKey;
   leaf.balance = event.params.balance;
   leaf.leafIndex = event.params.leafIndex.toI32();
   leaf.root = event.params.root;
