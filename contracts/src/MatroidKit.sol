@@ -18,7 +18,7 @@ contract MatroidKit {
     mapping(address => mapping(uint256 => mapping(bytes32 => bool)))
         public usedActivityNullifier;
 
-    event ProjectRegistered(address indexed project, bytes32 metadata);
+    event ProjectRegistered(address indexed project, string metadata);
     event MatroidIn(
         address indexed project,
         address indexed user,
@@ -49,7 +49,7 @@ contract MatroidKit {
         emit VerificationSet(verifier, roots);
     }
 
-    function registerProject(bytes32 metadata, bool pool) external {
+    function registerProject(string calldata metadata, bool pool) external {
         registry.registerProject(msg.sender, metadata, pool);
         emit ProjectRegistered(msg.sender, metadata);
     }

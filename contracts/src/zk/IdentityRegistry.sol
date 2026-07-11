@@ -26,8 +26,9 @@ contract IdentityRegistry {
     function enroll(bytes calldata proof, uint256 identityCommitment, bytes32 enrollNullifier) external {
         if (usedEnrollNullifier[enrollNullifier]) revert AlreadyEnrolled();
 
+        uint128 freshBind = uint128(bytes16(sha256(abi.encodePacked(identityCommitment))));
         bytes32[] memory pubInputs = new bytes32[](2);
-        pubInputs[0] = bytes32(identityCommitment);
+        pubInputs[0] = bytes32(uint256(freshBind));
         pubInputs[1] = enrollNullifier;
         if (!enrollmentVerifier.verify(proof, pubInputs)) revert BadProof();
 

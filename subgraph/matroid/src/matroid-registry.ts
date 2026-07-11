@@ -181,10 +181,14 @@ export function handleProjectRegistered(event: ProjectRegisteredEvent): void {
   proyecto.monaUniqueUsers = projectstats.monaUniqueUsers;
   proyecto.admins = [];
 
-  let ipfsHash = event.params.metadata.toString().split("/").pop();
-  if (ipfsHash != null) {
-    proyecto.metadata = ipfsHash;
-    MetadataTemplate.create(ipfsHash);
+  let uri = event.params.metadata;
+  proyecto.metadataUri = uri;
+  if (uri.startsWith("ipfs://")) {
+    let ipfsHash = uri.split("/").pop();
+    if (ipfsHash != null && ipfsHash.length > 0) {
+      proyecto.metadata = ipfsHash;
+      MetadataTemplate.create(ipfsHash);
+    }
   }
 
   proyecto.save();

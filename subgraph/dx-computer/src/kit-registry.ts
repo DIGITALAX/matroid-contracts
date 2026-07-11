@@ -1,8 +1,9 @@
-import { BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 import {
   KitPublished as KitPublishedEvent,
   KitVersioned as KitVersionedEvent,
   KitRemoved as KitRemovedEvent,
+  KitClaimed as KitClaimedEvent,
 } from "../generated/KitRegistry/KitRegistry";
 import { Kit, KitVersion } from "../generated/schema";
 
@@ -44,6 +45,9 @@ export function handleKitPublished(event: KitPublishedEvent): void {
   kit.kitId = event.params.id;
   kit.parentId = event.params.parentId;
   kit.mode = event.params.mode;
+  kit.creator =
+    event.params.mode == 0 ? event.transaction.from : Address.zero();
+  kit.ownerTag = event.params.ownerTag;
   kit.designHash = event.params.designHash;
   kit.contentUri = event.params.contentUri;
   kit.version = BigInt.fromI32(0);
@@ -77,6 +81,7 @@ export function handleKitVersioned(event: KitVersionedEvent): void {
   kit.version = event.params.version;
   kit.updatedAtBlock = event.block.number;
   kit.updatedAtTimestamp = event.block.timestamp;
+  kit.transactionHash = event.transaction.hash;
   kit.save();
 
   saveVersion(
@@ -96,6 +101,19 @@ export function handleKitRemoved(event: KitRemovedEvent): void {
   kit.revoked = true;
   kit.designHash = ZERO_HASH;
   kit.contentUri = "";
+  kit.updatedAtBlock = event.block.number;
+  kit.updatedAtTimestamp = event.block.timestamp;
+  kit.save();
+}
+
+export function handleKitClaimed(event: KitClaimedEvent): void {
+  let kit = Kit.load(event.params.id.toString());
+  if (kit == null) {
+    return;
+  }
+  kit.mode = 0;
+  kit.creator = event.params.owner;
+  kit.ownerTag = ZERO_HASH;
   kit.updatedAtBlock = event.block.number;
   kit.updatedAtTimestamp = event.block.timestamp;
   kit.save();

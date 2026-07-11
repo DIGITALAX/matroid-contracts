@@ -10,6 +10,7 @@ import { CouncilProposal } from "../generated/schema";
 export function handleProposalCreated(event: ProposalCreatedEvent): void {
   let p = new CouncilProposal(event.params.id.toString());
   p.proposalId = event.params.id;
+  p.proposer = event.transaction.from;
   p.kind = event.params.kind;
   p.contentUri = event.params.contentUri;
   p.project = event.params.project;

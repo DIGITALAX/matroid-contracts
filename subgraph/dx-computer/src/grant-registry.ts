@@ -1,6 +1,7 @@
-import { BigInt, Bytes, store } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes } from "@graphprotocol/graph-ts";
 import {
   GrantCreated as GrantCreatedEvent,
+  GrantUpdated as GrantUpdatedEvent,
   GrantFunded as GrantFundedEvent,
   GrantRemoved as GrantRemovedEvent,
   Claimed as ClaimedEvent,
@@ -42,16 +43,41 @@ export function handleGrantCreated(event: GrantCreatedEvent): void {
   grant.budget = event.params.budget;
   grant.raised = BigInt.fromI32(0);
   grant.totalShares = BigInt.fromI32(0);
-  grant.salesShareBps = event.params.salesShareBps;
   grant.funders = 0;
+  grant.removed = false;
   grant.createdAtBlock = event.block.number;
   grant.createdAtTimestamp = event.block.timestamp;
+  grant.updatedAtBlock = event.block.number;
+  grant.updatedAtTimestamp = event.block.timestamp;
+  grant.transactionHash = event.transaction.hash;
+  grant.save();
+}
+
+export function handleGrantUpdated(event: GrantUpdatedEvent): void {
+  let grant = Grant.load(event.params.grantId.toString());
+  if (grant == null) {
+    return;
+  }
+  grant.purposeHash = event.params.purposeHash;
+  grant.budget = event.params.budget;
+  if (isCleanUri(event.params.contentUri)) {
+    grant.contentUri = event.params.contentUri;
+  }
+  grant.updatedAtBlock = event.block.number;
+  grant.updatedAtTimestamp = event.block.timestamp;
   grant.transactionHash = event.transaction.hash;
   grant.save();
 }
 
 export function handleGrantRemoved(event: GrantRemovedEvent): void {
-  store.remove("Grant", event.params.grantId.toString());
+  let grant = Grant.load(event.params.grantId.toString());
+  if (grant == null) {
+    return;
+  }
+  grant.contentUri = "";
+  grant.budget = BigInt.fromI32(0);
+  grant.removed = true;
+  grant.save();
 }
 
 export function handleGrantFunded(event: GrantFundedEvent): void {
@@ -88,3 +114,4 @@ export function handleClaimed(event: ClaimedEvent): void {
   treeliner.totalClaimed = treeliner.totalClaimed.plus(event.params.amount);
   treeliner.save();
 }
+

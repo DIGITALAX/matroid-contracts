@@ -5,7 +5,7 @@ contract MatroidLibrary {
     struct Project {
         bool registered;
         address project;
-        bytes32 metadata;
+        string metadata;
         uint64 registeredAt;
         uint256 monaIn;
         uint256 monaOut;

@@ -42,5 +42,20 @@ export function handleMetadata(content: Bytes): void {
   let description = extractString(obj.get("description"), "description");
   if (description) metadata.description = description;
 
+  let link = extractString(obj.get("link"), "link");
+  if (link) metadata.link = link;
+
+  let languagesValue = obj.get("languages");
+  if (languagesValue && languagesValue.kind === JSONValueKind.ARRAY) {
+    let arr = languagesValue.toArray();
+    let languages: string[] = [];
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i].kind === JSONValueKind.STRING) {
+        languages.push(arr[i].toString());
+      }
+    }
+    metadata.languages = languages;
+  }
+
   metadata.save();
 }

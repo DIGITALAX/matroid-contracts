@@ -1,4 +1,5 @@
 [profile.default]
+libraries = ["node_modules/poseidon-solidity/PoseidonT3.sol:PoseidonT3:0x4B5DF730c2e6b28E17013A1485E5d9BC41Efe021"]
 src = "src"
 test = "test"
 script = "script"
@@ -7,14 +8,26 @@ libs = ["lib"]
 remappings = [
   "@openzeppelin/=lib/openzeppelin-contracts/",
   "forge-std/=lib/forge-std/src/",
-  "@semaphore-protocol/contracts/=lib/semaphore/packages/contracts/contracts/"
+  "@semaphore-protocol/contracts/=lib/semaphore/packages/contracts/contracts/",
+  "@zk-kit/lean-imt.sol/=node_modules/@zk-kit/lean-imt.sol/",
+  "poseidon-solidity/=node_modules/poseidon-solidity/"
 ]
 optimizer = true
 optimizer_runs = 200
 via_ir = true
-skip = ["src/zk/MatroidPaymaster.sol"]
+fs_permissions = [
+  { access = "read-write", path = "./deployments" },
+  { access = "read", path = "./zkout" },
+]
 
 [profile.default.zksync]
 compile = false
+
+[profile.verifier]
+src = "verifiers"
+test = "verifiers"
+script = "verifiers"
+optimizer = true
+optimizer_runs = 200
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

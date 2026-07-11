@@ -8,7 +8,7 @@ dataSources:
     name: MatroidRegistry
     network: anvil
     source:
-      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431"
+      address: "0x29c6fF2E3D04a9f37e7af1fF9b38C9E2e9079FfA"
       abi: MatroidRegistry
       startBlock: 0
     mapping:
@@ -22,6 +22,10 @@ dataSources:
       abis:
         - name: MatroidRegistry
           file: ./abis/MatroidRegistry.json
+        - name: ProjectStakingPool
+          file: ./abis/ProjectStakingPool.json
+        - name: ProjectNFTStakingPool
+          file: ./abis/ProjectNFTStakingPool.json
       eventHandlers:
         - event: ClaimerUpdated(indexed address,indexed address,bool)
           handler: handleClaimerUpdated
@@ -29,7 +33,7 @@ dataSources:
           handler: handleFlowRecorded
         - event: ProjectPoolsCreated(indexed address,address,address)
           handler: handleProjectPoolsCreated
-        - event: ProjectRegistered(indexed address,bytes32)
+        - event: ProjectRegistered(indexed address,string)
           handler: handleProjectRegistered
         - event: RewardSplitsUpdated(indexed address,uint16,uint16,uint16)
           handler: handleRewardSplitsUpdated
@@ -38,7 +42,7 @@ dataSources:
     name: MatroidKit
     network: anvil
     source:
-      address: "0x8ce361602b935680e8dec218b820ff5056beb7af"
+      address: "0xd4567AA4Fd1B32A16c16CBFF9D9a69e51CF72293"
       abi: MatroidKit
       startBlock: 0
     mapping:
@@ -57,14 +61,14 @@ dataSources:
           handler: handleMatroidIn
         - event: MatroidOut(indexed address,indexed address,indexed address,uint256)
           handler: handleMatroidOut
-        - event: ProjectRegistered(indexed address,bytes32)
+        - event: ProjectRegistered(indexed address,string)
           handler: handleProjectRegistered
       file: ./src/matroid-kit.ts
   - kind: ethereum
     name: Treasury
     network: anvil
     source:
-      address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e"
+      address: "0xfC3c03385dA8D5Adfb8BDF5f5fe156fb5B3a6Ee2"
       abi: Treasury
       startBlock: 0
     mapping:
@@ -120,7 +124,7 @@ dataSources:
     name: SlashingCouncil
     network: anvil
     source:
-      address: "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d"
+      address: "0x1055780Bd25e2F698E7c9a95FBaf4cb565A23A14"
       abi: SlashingCouncil
       startBlock: 0
     mapping:
@@ -152,7 +156,7 @@ dataSources:
     name: GlobalStakingPool
     network: anvil
     source:
-      address: "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
+      address: "0x3ccA24e1A0e49654bc3482ab70199b7400eb7A3a"
       abi: GlobalStakingPool
       startBlock: 0
     mapping:
@@ -179,35 +183,10 @@ dataSources:
           handler: handleUnstaked
       file: ./src/global-staking-pool.ts
   - kind: ethereum
-    name: MatroidGovernance
-    network: anvil
-    source:
-      address: "0x0000000000000000000000000000000000000000"
-      abi: MatroidGovernance
-      startBlock: 0
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.9
-      language: wasm/assemblyscript
-      entities:
-        - BudgetProposal
-        - BudgetVote
-      abis:
-        - name: MatroidGovernance
-          file: ./abis/MatroidGovernance.json
-      eventHandlers:
-        - event: ProposalCreated(indexed uint256,uint256,uint256,uint256)
-          handler: handleProposalCreated
-        - event: Voted(indexed uint256,indexed address,bool,uint256)
-          handler: handleVoted
-        - event: ProposalExecuted(indexed uint256,bool,bool)
-          handler: handleProposalExecuted
-      file: ./src/matroid-governance.ts
-  - kind: ethereum
     name: MatroidAnonGovernance
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xE015ADD43D2C41e8Af4e9238e389101884853896"
       abi: MatroidAnonGovernance
       startBlock: 0
     mapping:
@@ -231,7 +210,7 @@ dataSources:
     name: IdentityRegistry
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x22F4D93be0E8C0C081e74c0d5e697B64eEA007FF"
       abi: IdentityRegistry
       startBlock: 0
     mapping:
@@ -249,30 +228,32 @@ dataSources:
           handler: handleEnrolled
       file: ./src/identity-registry.ts
   - kind: ethereum
-    name: MonaBalanceTree
+    name: BalancePool
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
-      abi: MonaBalanceTree
+      address: "0xEBf9D3ead9A8c2bb8cEa438B8Dfa9f1AFf44bfa7"
+      abi: BalancePool
       startBlock: 0
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
-        - BalanceLeaf
+        - PoolEvent
       abis:
-        - name: MonaBalanceTree
-          file: ./abis/MonaBalanceTree.json
+        - name: BalancePool
+          file: ./abis/BalancePool.json
       eventHandlers:
-        - event: Registered(indexed uint256,uint256,uint32,bytes32)
-          handler: handleRegistered
-      file: ./src/mona-balance-tree.ts
+        - event: Deposited(indexed uint8,bytes32,uint32,bytes32)
+          handler: handleDeposited
+        - event: Withdrawn(indexed uint8,uint32,bytes32)
+          handler: handleWithdrawn
+      file: ./src/balance-pool.ts
   - kind: ethereum
     name: SponsorVault
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x1A2894885076934dAf5a398Ff216c6d665707bbA"
       abi: SponsorVault
       startBlock: 0
     mapping:

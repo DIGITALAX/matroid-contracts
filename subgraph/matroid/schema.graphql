@@ -24,34 +24,6 @@ type Global @entity {
   projects: [Project!]
 }
 
-type BudgetProposal @entity {
-  id: Bytes!
-  proposalId: BigInt!
-  baseBudget: BigInt!
-  perProjectBudget: BigInt!
-  newDuration: BigInt!
-  endTime: BigInt!
-  yesWeight: BigInt!
-  noWeight: BigInt!
-  executed: Boolean!
-  passed: Boolean
-  applied: Boolean
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type BudgetVote @entity {
-  id: Bytes!
-  proposal: BudgetProposal!
-  voter: Bytes!
-  inFavor: Boolean!
-  amount: BigInt!
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
 type AnonBudgetProposal @entity {
   id: Bytes!
   proposalId: BigInt!
@@ -83,13 +55,15 @@ type _EnrollmentCounter @entity {
   count: Int!
 }
 
-type BalanceLeaf @entity(immutable: true) {
+type PoolEvent @entity(immutable: true) {
   id: ID!
-  balanceKey: BigInt!
-  balance: BigInt!
+  bucket: Int!
+  kind: String!
+  commitment: Bytes!
   leafIndex: Int!
   root: Bytes!
   blockNumber: BigInt!
+  logIndex: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
@@ -190,6 +164,7 @@ type Unstaked @entity {
 
 type Project @entity {
   id: Bytes!
+  metadataUri: String
   metadata: ProjectMetadata
   registeredAt: BigInt
   erc20Pool: ProjectPoolERC20
@@ -213,6 +188,8 @@ type ProjectMetadata @entity {
   title: String
   image: String
   description: String
+  link: String
+  languages: [String!]
 }
 
 type TokenFlow @entity {
@@ -399,7 +376,7 @@ type GlobalRewardNotified @entity {
 type MatroidKitProjectRegistered @entity {
   id: Bytes!
   project: Bytes!
-  metadata: Bytes!
+  metadata: String!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!

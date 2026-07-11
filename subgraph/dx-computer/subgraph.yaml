@@ -8,7 +8,7 @@ dataSources:
     name: KitRegistry
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xA1B809005E589f81dE6EF9F48D67e35606c05fC3"
       abi: KitRegistry
       startBlock: 0
     mapping:
@@ -21,18 +21,20 @@ dataSources:
         - name: KitRegistry
           file: ./abis/KitRegistry.json
       eventHandlers:
-        - event: KitPublished(indexed uint256,indexed uint256,uint8,bytes32,string)
+        - event: KitPublished(indexed uint256,indexed uint256,uint8,bytes32,bytes32,string)
           handler: handleKitPublished
         - event: KitVersioned(indexed uint256,bytes32,uint64,string)
           handler: handleKitVersioned
         - event: KitRemoved(indexed uint256)
           handler: handleKitRemoved
+        - event: KitClaimed(indexed uint256,indexed address)
+          handler: handleKitClaimed
       file: ./src/kit-registry.ts
   - kind: ethereum
     name: GrantRegistry
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xc0431C32561DabE0c8FD791B52590BbBA413c235"
       abi: GrantRegistry
       startBlock: 0
     mapping:
@@ -43,12 +45,15 @@ dataSources:
         - Grant
         - GrantFunder
         - Treeliner
+        - CreatorBan
       abis:
         - name: GrantRegistry
           file: ./abis/GrantRegistry.json
       eventHandlers:
-        - event: GrantCreated(indexed uint256,indexed uint256,indexed address,bytes32,string,uint256,uint16)
+        - event: GrantCreated(indexed uint256,indexed uint256,indexed address,bytes32,string,uint256)
           handler: handleGrantCreated
+        - event: GrantUpdated(indexed uint256,bytes32,string,uint256)
+          handler: handleGrantUpdated
         - event: GrantFunded(indexed uint256,indexed address,uint256,uint256)
           handler: handleGrantFunded
         - event: GrantRemoved(indexed uint256)
@@ -60,7 +65,7 @@ dataSources:
     name: PrefabMarket
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xD49036D56f474152891D9eced770D6b90B2cEAE9"
       abi: PrefabMarket
       startBlock: 0
     mapping:
@@ -69,26 +74,44 @@ dataSources:
       language: wasm/assemblyscript
       entities:
         - Offer
+        - OfferAgent
+        - Order
       abis:
         - name: PrefabMarket
           file: ./abis/PrefabMarket.json
       eventHandlers:
-        - event: OfferCreated(indexed uint256,indexed address,uint256,uint64,bytes32,string,uint256,uint16,uint256)
+        - event: OfferCreated(indexed uint256,indexed address,uint256,uint64,bytes32,string,uint256,uint16,uint256,uint64)
           handler: handleOfferCreated
-        - event: OfferUpdated(indexed uint256,uint256,uint16,uint256)
+        - event: OfferUpdated(indexed uint256,uint256,uint16,uint256,string,uint64)
           handler: handleOfferUpdated
         - event: OfferDeleted(indexed uint256)
           handler: handleOfferDeleted
         - event: GrantLinked(indexed uint256,indexed uint256,uint16)
           handler: handleGrantLinked
-        - event: OrderPlaced(indexed uint256,indexed uint256,indexed address,address,bytes32)
+        - event: GrantUnlinked(indexed uint256)
+          handler: handleGrantUnlinked
+        - event: AgentLinked(indexed uint256,indexed uint256)
+          handler: handleAgentLinked
+        - event: AgentUnlinked(indexed uint256,indexed uint256)
+          handler: handleAgentUnlinked
+        - event: CyberSwagSet(indexed uint256,uint16)
+          handler: handleCyberSwagSet
+        - event: OrderPlaced(indexed uint256,indexed uint256,indexed address,uint256,address,bytes32,bytes)
           handler: handleOrderPlaced
+        - event: OrderSlices(indexed uint256,uint256,uint256,uint256,uint256,uint256)
+          handler: handleOrderSlices
+        - event: OrderReleased(indexed uint256,bool)
+          handler: handleOrderReleased
+        - event: OrderRefunded(indexed uint256)
+          handler: handleOrderRefunded
+        - event: OrderStageSet(indexed uint256,uint8,uint64)
+          handler: handleOrderStageSet
       file: ./src/prefab-market.ts
   - kind: ethereum
     name: ContentRegistry
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xb1Ca5B44ef3627A3E5Ed7a6EE877D9D997A7c7ED"
       abi: ContentRegistry
       startBlock: 0
     mapping:
@@ -101,7 +124,7 @@ dataSources:
         - name: ContentRegistry
           file: ./abis/ContentRegistry.json
       eventHandlers:
-        - event: Posted(indexed uint256,address,bytes32,bytes32,bytes32,string)
+        - event: Posted(indexed uint256,address,bytes32,bytes32,bytes32,bytes32,string)
           handler: handlePosted
         - event: Updated(indexed uint256,bytes32,uint64,bool)
           handler: handleUpdated
@@ -110,7 +133,7 @@ dataSources:
     name: CyberswagmanRegistry
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x996462e0eAf00bF6BF0Ea15F29d715C0eD3906F1"
       abi: CyberswagmanRegistry
       startBlock: 0
     mapping:
@@ -121,33 +144,27 @@ dataSources:
         - Agent
         - AgentKit
         - AgentResult
-        - Cyberswagman
-        - CyberWeight
       abis:
         - name: CyberswagmanRegistry
           file: ./abis/CyberswagmanRegistry.json
       eventHandlers:
         - event: AgentRegistered(indexed uint256,indexed address,bytes32,bytes32,string)
           handler: handleAgentRegistered
-        - event: AgentUpdated(indexed uint256,bytes32,bytes32)
+        - event: AgentUpdated(indexed uint256,bytes32,bytes32,string)
           handler: handleAgentUpdated
         - event: SchemaChanged(indexed uint256,indexed uint256,bool)
           handler: handleSchemaChanged
-        - event: ResultPosted(indexed uint256,indexed uint256,bytes32)
+        - event: ResultPosted(indexed uint256,indexed uint256,bytes32,string)
           handler: handleResultPosted
         - event: AgentDeleted(indexed uint256)
           handler: handleAgentDeleted
-        - event: WeightSet(indexed uint256,indexed address,uint256)
-          handler: handleWeightSet
-        - event: Claimed(indexed uint256,indexed address,uint256)
-          handler: handleClaimed
       file: ./src/cyberswagman-registry.ts
   - kind: ethereum
-    name: SponsorCouncil
+    name: DxCouncil
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
-      abi: SponsorCouncil
+      address: "0xf43624d811c5DC9eF91cF237ab9B8eE220D438eE"
+      abi: DxCouncil
       startBlock: 0
     mapping:
       kind: ethereum/events
@@ -156,8 +173,8 @@ dataSources:
       entities:
         - CouncilProposal
       abis:
-        - name: SponsorCouncil
-          file: ./abis/SponsorCouncil.json
+        - name: DxCouncil
+          file: ./abis/DxCouncil.json
       eventHandlers:
         - event: ProposalCreated(indexed uint256,uint8,indexed address,bool,uint256,uint64,string)
           handler: handleProposalCreated
@@ -165,12 +182,12 @@ dataSources:
           handler: handleVoted
         - event: Executed(indexed uint256,uint8,indexed address)
           handler: handleExecuted
-      file: ./src/sponsor-council.ts
+      file: ./src/dx-council.ts
   - kind: ethereum
     name: IdentityRegistry
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x22F4D93be0E8C0C081e74c0d5e697B64eEA007FF"
       abi: IdentityRegistry
       startBlock: 0
     mapping:
@@ -188,22 +205,44 @@ dataSources:
           handler: handleEnrolled
       file: ./src/identity-registry.ts
   - kind: ethereum
-    name: MonaBalanceTree
+    name: BalancePool
     network: anvil
     source:
-      address: "0x0000000000000000000000000000000000000000"
-      abi: MonaBalanceTree
+      address: "0x23ceE3FB585b1e5092b7CFB222e8e873B05E9519"
+      abi: BalancePool
       startBlock: 0
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
-        - BalanceLeaf
+        - PoolEvent
       abis:
-        - name: MonaBalanceTree
-          file: ./abis/MonaBalanceTree.json
+        - name: BalancePool
+          file: ./abis/BalancePool.json
       eventHandlers:
-        - event: Registered(indexed uint256,uint256,uint32,bytes32)
-          handler: handleRegistered
-      file: ./src/mona-balance-tree.ts
+        - event: Deposited(indexed uint8,bytes32,uint32,bytes32)
+          handler: handleDeposited
+        - event: Withdrawn(indexed uint8,uint32,bytes32)
+          handler: handleWithdrawn
+      file: ./src/balance-pool.ts
+  - kind: ethereum
+    name: Blacklist
+    network: anvil
+    source:
+      address: "0xe4C7fBB0a626ed208021ccabA6Be1566905E2dFc"
+      abi: Blacklist
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - CreatorBan
+      abis:
+        - name: Blacklist
+          file: ./abis/Blacklist.json
+      eventHandlers:
+        - event: Banned(indexed address,bool,indexed address)
+          handler: handleBanned
+      file: ./src/blacklist.ts

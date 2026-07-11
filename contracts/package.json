@@ -1,0 +1,9 @@
+{
+  "name": "matroid-contracts",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@zk-kit/lean-imt.sol": "2.0.1",
+    "poseidon-solidity": "^0.0.5"
+  }
+}

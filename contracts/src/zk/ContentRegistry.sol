@@ -4,11 +4,16 @@ pragma solidity ^0.8.28;
 import {IVerifier} from "./IVerifier.sol";
 import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
 
+interface IBlacklist {
+    function isBanned(address who) external view returns (bool);
+}
+
 contract ContentRegistry {
     struct Content {
         address author;
         bytes32 ownerTag;
         bytes32 canonicalTag;
+        bytes32 moderatorTag;
         bytes32 contentHash;
         string contentUri;
         uint64 version;
@@ -22,11 +27,12 @@ contract ContentRegistry {
     IVerifier public immutable editVerifier;
     ISemaphore public immutable semaphore;
     uint256 public immutable groupId;
+    IBlacklist public immutable blacklist;
 
     uint256 public contentCount;
     mapping(uint256 => Content) public contents;
 
-    event Posted(uint256 indexed id, address author, bytes32 ownerTag, bytes32 canonicalTag, bytes32 contentHash, string contentUri);
+    event Posted(uint256 indexed id, address author, bytes32 ownerTag, bytes32 canonicalTag, bytes32 moderatorTag, bytes32 contentHash, string contentUri);
     event Updated(uint256 indexed id, bytes32 contentHash, uint64 version, bool revoked);
     event Moderated(uint256 indexed id, bytes32 canonicalTag);
 
@@ -37,15 +43,18 @@ contract ContentRegistry {
     error BadNonce();
     error NoCanonical();
     error NotAuthor();
+    error Banned();
 
     constructor(
         address editVerifierAddress,
         address semaphoreAddress,
-        uint256 groupId_
+        uint256 groupId_,
+        address blacklistAddress
     ) {
         editVerifier = IVerifier(editVerifierAddress);
         semaphore = ISemaphore(semaphoreAddress);
         groupId = groupId_;
+        blacklist = IBlacklist(blacklistAddress);
     }
 
     function post(
@@ -53,6 +62,7 @@ contract ContentRegistry {
         bytes32 contentHash,
         bytes32 ownerTag,
         bytes32 canonicalTag,
+        bytes32 moderatorTag,
         string calldata contentUri
     ) external returns (uint256 id) {
         if (proof.scope != POST_SCOPE) revert BadScope();
@@ -65,6 +75,7 @@ contract ContentRegistry {
             author: address(0),
             ownerTag: ownerTag,
             canonicalTag: canonicalTag,
+            moderatorTag: moderatorTag,
             contentHash: contentHash,
             contentUri: contentUri,
             version: 0,
@@ -72,19 +83,21 @@ contract ContentRegistry {
             revoked: false,
             moderated: false
         });
-        emit Posted(id, address(0), ownerTag, canonicalTag, contentHash, contentUri);
+        emit Posted(id, address(0), ownerTag, canonicalTag, moderatorTag, contentHash, contentUri);
     }
 
-    function postPublic(bytes32 contentHash, bytes32 canonicalTag, string calldata contentUri)
+    function postPublic(bytes32 contentHash, bytes32 canonicalTag, bytes32 moderatorTag, string calldata contentUri)
         external
         returns (uint256 id)
     {
+        if (blacklist.isBanned(msg.sender)) revert Banned();
         id = contentCount;
         contentCount = id + 1;
         contents[id] = Content({
             author: msg.sender,
             ownerTag: bytes32(0),
             canonicalTag: canonicalTag,
+            moderatorTag: moderatorTag,
             contentHash: contentHash,
             contentUri: contentUri,
             version: 0,
@@ -92,7 +105,7 @@ contract ContentRegistry {
             revoked: false,
             moderated: false
         });
-        emit Posted(id, msg.sender, bytes32(0), canonicalTag, contentHash, contentUri);
+        emit Posted(id, msg.sender, bytes32(0), canonicalTag, moderatorTag, contentHash, contentUri);
     }
 
     function removePublic(uint256 id) external {
@@ -134,10 +147,10 @@ contract ContentRegistry {
         Content storage c = contents[id];
         if (!c.exists) revert NoContent();
         if (c.revoked) revert AlreadyRevoked();
-        if (c.canonicalTag == bytes32(0)) revert NoCanonical();
+        if (c.moderatorTag == bytes32(0)) revert NoCanonical();
 
         bytes32[] memory pubInputs = new bytes32[](3);
-        pubInputs[0] = c.canonicalTag;
+        pubInputs[0] = c.moderatorTag;
         pubInputs[1] = bytes32(uint256(id));
         pubInputs[2] = bytes32(0);
         if (!editVerifier.verify(proof, pubInputs)) revert BadProof();
@@ -146,5 +159,6 @@ contract ContentRegistry {
         c.revoked = true;
         c.moderated = true;
         emit Moderated(id, c.canonicalTag);
+        emit Updated(id, bytes32(0), c.version, true);
     }
 }

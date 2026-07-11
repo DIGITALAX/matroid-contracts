@@ -14,21 +14,11 @@ interface IPaymasterAdmin {
     function setCap(address project, uint256 cap) external;
 }
 
-interface IBlacklist {
-    function setBlacklisted(address actor, bool banned) external;
-}
-
-interface ICyberWeight {
-    function setWeight(uint256 projectId, address swagman, uint256 weight) external;
-}
-
 contract SponsorCouncil {
     enum Kind {
         Blacklist,
         Cap,
-        SetQuorum,
-        Ban,
-        SetCyberWeight
+        SetQuorum
     }
 
     struct Proposal {
@@ -114,20 +104,6 @@ contract SponsorCouncil {
         return _propose(Kind.SetQuorum, address(0), address(0), false, newQuorum, 0, contentUri);
     }
 
-    function proposeBan(address target, address actor, bool banned, string calldata contentUri) external returns (uint256) {
-        return _propose(Kind.Ban, target, actor, banned, 0, 0, contentUri);
-    }
-
-    function proposeSetCyberWeight(
-        address cyberRegistry,
-        uint256 projectId,
-        address swagman,
-        uint256 weight,
-        string calldata contentUri
-    ) external returns (uint256) {
-        return _propose(Kind.SetCyberWeight, cyberRegistry, swagman, false, weight, projectId, contentUri);
-    }
-
     function _propose(
         Kind kind,
         address target,
@@ -201,10 +177,6 @@ contract SponsorCouncil {
             paymaster.setBlacklisted(p.project, p.banned);
         } else if (p.kind == Kind.Cap) {
             paymaster.setCap(p.project, p.value);
-        } else if (p.kind == Kind.Ban) {
-            IBlacklist(p.target).setBlacklisted(p.project, p.banned);
-        } else if (p.kind == Kind.SetCyberWeight) {
-            ICyberWeight(p.target).setWeight(p.extra, p.project, p.value);
         } else {
             if (p.value < quorumFloor) revert BelowFloor();
             quorum = p.value;

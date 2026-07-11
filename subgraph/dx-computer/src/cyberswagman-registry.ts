@@ -1,20 +1,12 @@
-import { BigInt, store } from "@graphprotocol/graph-ts";
+import { store } from "@graphprotocol/graph-ts";
 import {
   AgentRegistered as AgentRegisteredEvent,
   AgentUpdated as AgentUpdatedEvent,
   SchemaChanged as SchemaChangedEvent,
   ResultPosted as ResultPostedEvent,
   AgentDeleted as AgentDeletedEvent,
-  WeightSet as WeightSetEvent,
-  Claimed as ClaimedEvent,
 } from "../generated/CyberswagmanRegistry/CyberswagmanRegistry";
-import {
-  Agent,
-  AgentKit,
-  AgentResult,
-  Cyberswagman,
-  CyberWeight,
-} from "../generated/schema";
+import { Agent, AgentKit, AgentResult } from "../generated/schema";
 
 function isCleanUri(uri: string): boolean {
   return (
@@ -47,6 +39,9 @@ export function handleAgentUpdated(event: AgentUpdatedEvent): void {
   }
   agent.modelHash = event.params.modelHash;
   agent.hardwareHash = event.params.hardwareHash;
+  if (isCleanUri(event.params.contentUri)) {
+    agent.contentUri = event.params.contentUri;
+  }
   agent.save();
 }
 
@@ -66,14 +61,21 @@ export function handleSchemaChanged(event: SchemaChangedEvent): void {
 
 export function handleResultPosted(event: ResultPostedEvent): void {
   let id =
-    event.params.agentId.toString() + "-" + event.params.projectId.toString();
-  let r = AgentResult.load(id);
-  if (r == null) {
-    r = new AgentResult(id);
-    r.agent = event.params.agentId.toString();
-    r.kitId = event.params.projectId;
-  }
+    event.params.agentId.toString() +
+    "-" +
+    event.params.projectId.toString() +
+    "-" +
+    event.transaction.hash.toHexString() +
+    "-" +
+    event.logIndex.toString();
+  let r = new AgentResult(id);
+  r.agent = event.params.agentId.toString();
+  r.kitId = event.params.projectId;
+  r.contentUri = "";
   r.resultHash = event.params.resultHash;
+  if (isCleanUri(event.params.contentUri)) {
+    r.contentUri = event.params.contentUri;
+  }
   r.createdAtBlock = event.block.number;
   r.createdAtTimestamp = event.block.timestamp;
   r.transactionHash = event.transaction.hash;
@@ -82,30 +84,4 @@ export function handleResultPosted(event: ResultPostedEvent): void {
 
 export function handleAgentDeleted(event: AgentDeletedEvent): void {
   store.remove("Agent", event.params.agentId.toString());
-}
-
-export function handleWeightSet(event: WeightSetEvent): void {
-  let id =
-    event.params.projectId.toString() +
-    "-" +
-    event.params.swagman.toHexString();
-  let w = CyberWeight.load(id);
-  if (w == null) {
-    w = new CyberWeight(id);
-    w.swagman = event.params.swagman;
-    w.kitId = event.params.projectId;
-  }
-  w.weight = event.params.weight;
-  w.save();
-}
-
-export function handleClaimed(event: ClaimedEvent): void {
-  let id = event.params.swagman.toHexString();
-  let c = Cyberswagman.load(id);
-  if (c == null) {
-    c = new Cyberswagman(id);
-    c.totalClaimed = BigInt.fromI32(0);
-  }
-  c.totalClaimed = c.totalClaimed.plus(event.params.amount);
-  c.save();
 }

@@ -10,7 +10,6 @@ import {Treasury} from "../src/Treasury.sol";
 import {GlobalStakingPool} from "../src/GlobalStakingPool.sol";
 import {StakingFactory} from "../src/StakingFactory.sol";
 import {SlashingCouncil} from "../src/SlashingCouncil.sol";
-import {MatroidGovernance} from "../src/MatroidGovernance.sol";
 import {GandaAccessControl} from "../src/Ganda/GandaAccessControl.sol";
 import {GandaDesigners} from "../src/Ganda/GandaDesigners.sol";
 import {GandaReactionPacks} from "../src/Ganda/GandaReactionPacks.sol";
@@ -72,17 +71,6 @@ contract Deploy is Script {
         );
         treasury.setSlashingContract(address(slashing));
 
-        MatroidGovernance governance = new MatroidGovernance(
-            address(mona),
-            address(treasury),
-            votingWindow,
-            1 ether,
-            1000,
-            6000
-        );
-        treasury.setGovernance(address(governance));
-        treasury.renounceOwnership();
-
         GandaAccessControl gandaAccess = new GandaAccessControl();
         GandaDesigners gandaDesigners = new GandaDesigners(address(gandaAccess));
         GandaReactionPacks gandaPacks = new GandaReactionPacks(
@@ -95,7 +83,7 @@ contract Deploy is Script {
         );
         gandaDesigners.setReactionPacks(address(gandaPacks));
         GandaRegistry gandaRegistry = new GandaRegistry(address(gandaAccess), address(gandaPacks));
-        gandaPacks.registerProject(bytes32("ganda"));
+        gandaPacks.registerProject("ganda");
 
 
         vm.stopBroadcast();

@@ -3,12 +3,16 @@ pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+interface IBlacklist {
+    function isBanned(address who) external view returns (bool);
+    function setBanned(address who, bool value) external;
+}
+
 contract GrantRegistry {
     uint256 private constant ACC = 1e18;
-    uint16 public constant BPS = 10000;
 
     IERC20 public immutable mona;
-    address public immutable council;
+    IBlacklist public immutable blacklist;
 
     struct Grant {
         uint256 kitId;
@@ -23,52 +27,43 @@ contract GrantRegistry {
 
     mapping(uint256 => Grant) public grants;
     uint256 public grantCount;
-    mapping(uint256 => uint16) public salesShareBps;
     mapping(uint256 => mapping(address => uint256)) public shares;
     mapping(uint256 => uint256) public accRewardPerShare;
     mapping(uint256 => mapping(address => uint256)) public rewardDebt;
     mapping(uint256 => mapping(address => uint256)) public pending;
-    mapping(address => bool) public creatorBanned;
+    mapping(uint256 => address) public ruggedCreator;
 
-    event GrantCreated(uint256 indexed grantId, uint256 indexed kitId, address indexed creator, bytes32 purposeHash, string contentUri, uint256 budget, uint16 salesShareBps);
+    event GrantCreated(uint256 indexed grantId, uint256 indexed kitId, address indexed creator, bytes32 purposeHash, string contentUri, uint256 budget);
+    event GrantUpdated(uint256 indexed grantId, bytes32 purposeHash, string contentUri, uint256 budget);
     event GrantRemoved(uint256 indexed grantId);
     event GrantFunded(uint256 indexed grantId, address indexed funder, uint256 amount, uint256 totalFunderShares);
     event RewardAdded(uint256 indexed grantId, uint256 amount);
     event Claimed(uint256 indexed grantId, address indexed funder, uint256 amount);
-    event CreatorBanned(address indexed creator, bool banned);
 
     error NoGrant();
     error ZeroAmount();
     error NoFunders();
     error Banned();
-    error NotCouncil();
-    error BadShare();
     error TransferFailed();
     error NotCreator();
     error HasFunders();
+    error NotRugged();
+    error NoShares();
 
-    constructor(address monaAddress, address councilAddress) {
+    constructor(address monaAddress, address blacklistAddress) {
         mona = IERC20(monaAddress);
-        council = councilAddress;
-    }
-
-    function setBlacklisted(address creator, bool banned) external {
-        if (msg.sender != council) revert NotCouncil();
-        creatorBanned[creator] = banned;
-        emit CreatorBanned(creator, banned);
+        blacklist = IBlacklist(blacklistAddress);
     }
 
     function createGrant(
         uint256 kitId,
         bytes32 purposeHash,
         string calldata contentUri,
-        uint256 budget,
-        uint16 salesShareBps_
+        uint256 budget
     ) external returns (uint256 grantId) {
-        if (creatorBanned[msg.sender]) revert Banned();
-        if (salesShareBps_ > BPS) revert BadShare();
-        grantId = grantCount;
-        grantCount = grantId + 1;
+        if (blacklist.isBanned(msg.sender)) revert Banned();
+        grantId = grantCount + 1;
+        grantCount = grantId;
         grants[grantId] = Grant({
             kitId: kitId,
             creator: msg.sender,
@@ -79,22 +74,47 @@ contract GrantRegistry {
             totalShares: 0,
             exists: true
         });
-        salesShareBps[grantId] = salesShareBps_;
-        emit GrantCreated(grantId, kitId, msg.sender, purposeHash, contentUri, budget, salesShareBps_);
+        emit GrantCreated(grantId, kitId, msg.sender, purposeHash, contentUri, budget);
+    }
+
+    function updateGrant(
+        uint256 grantId,
+        bytes32 purposeHash,
+        string calldata contentUri,
+        uint256 budget
+    ) external {
+        Grant storage g = grants[grantId];
+        if (!g.exists) revert NoGrant();
+        if (g.creator != msg.sender) revert NotCreator();
+        if (g.totalShares != 0) revert HasFunders();
+        g.purposeHash = purposeHash;
+        g.contentUri = contentUri;
+        g.budget = budget;
+        emit GrantUpdated(grantId, purposeHash, contentUri, budget);
     }
 
     function removeGrant(uint256 grantId) external {
         Grant storage g = grants[grantId];
         if (!g.exists) revert NoGrant();
         if (g.creator != msg.sender) revert NotCreator();
-        if (g.totalShares != 0) revert HasFunders();
-        g.exists = false;
+        if (g.totalShares != 0) {
+            ruggedCreator[grantId] = g.creator;
+        }
+        delete grants[grantId];
         emit GrantRemoved(grantId);
+    }
+
+    function blacklistRuggedCreator(uint256 grantId) external {
+        address creator = ruggedCreator[grantId];
+        if (creator == address(0)) revert NotRugged();
+        if (shares[grantId][msg.sender] == 0) revert NoShares();
+        blacklist.setBanned(creator, true);
     }
 
     function fundGrant(uint256 grantId, uint256 amount) external {
         Grant storage g = grants[grantId];
         if (!g.exists) revert NoGrant();
+        if (blacklist.isBanned(msg.sender)) revert Banned();
         if (amount == 0) revert ZeroAmount();
 
         _settle(grantId, msg.sender);
@@ -119,6 +139,10 @@ contract GrantRegistry {
 
     function totalSharesOf(uint256 grantId) external view returns (uint256) {
         return grants[grantId].totalShares;
+    }
+
+    function kitOf(uint256 grantId) external view returns (uint256) {
+        return grants[grantId].kitId;
     }
 
     function pendingReward(uint256 grantId, address funder) external view returns (uint256) {

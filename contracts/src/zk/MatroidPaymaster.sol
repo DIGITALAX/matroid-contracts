@@ -3,20 +3,17 @@ pragma solidity ^0.8.28;
 
 import {
     IPaymaster,
+    IPaymasterFlow,
     ExecutionResult,
-    PAYMASTER_VALIDATION_SUCCESS_MAGIC
-} from "@matterlabs/zksync-contracts/l2/system-contracts/interfaces/IPaymaster.sol";
-import {IPaymasterFlow} from "@matterlabs/zksync-contracts/l2/system-contracts/interfaces/IPaymasterFlow.sol";
-import {
-    TransactionHelper,
-    Transaction
-} from "@matterlabs/zksync-contracts/l2/system-contracts/libraries/TransactionHelper.sol";
-import {BOOTLOADER_FORMAL_ADDRESS} from "@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol";
+    Transaction,
+    PAYMASTER_VALIDATION_SUCCESS_MAGIC,
+    BOOTLOADER_FORMAL_ADDRESS
+} from "./IPaymasterZk.sol";
 
 contract MatroidPaymaster is IPaymaster {
     uint256 public constant EPOCH = 1 days;
 
-    address public immutable governance;
+    address public governance;
     uint256 public defaultCapPerEpoch;
 
     mapping(address => bool) public registered;
@@ -24,6 +21,7 @@ contract MatroidPaymaster is IPaymaster {
     mapping(address => uint256) public capPerEpoch;
     mapping(address => mapping(uint256 => uint256)) public spentInEpoch;
 
+    event GovernanceTransferred(address indexed previous, address indexed next);
     event Registered(address indexed project, bool active);
     event BlacklistedSet(address indexed project, bool banned);
     event CapSet(address indexed project, uint256 cap);
@@ -55,6 +53,12 @@ contract MatroidPaymaster is IPaymaster {
         if (governanceAddress == address(0)) revert ZeroAddress();
         governance = governanceAddress;
         defaultCapPerEpoch = defaultCap;
+    }
+
+    function transferGovernance(address next) external onlyGovernance {
+        if (next == address(0)) revert ZeroAddress();
+        emit GovernanceTransferred(governance, next);
+        governance = next;
     }
 
     function register() external {

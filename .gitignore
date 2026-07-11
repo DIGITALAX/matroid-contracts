@@ -52,3 +52,6 @@ notes.md
 /circuits
 /**.txt
 /**.md
+/btcregtest
+.cache
+/chip-bridge

@@ -7,7 +7,11 @@ import {
 import { AnonBudgetProposal } from "../generated/schema";
 
 function proposalId(id: BigInt): Bytes {
-  return Bytes.fromHexString(id.toHexString());
+  let hex = id.toHexString().slice(2);
+  if (hex.length % 2 == 1) {
+    hex = "0" + hex;
+  }
+  return Bytes.fromHexString("0x" + hex);
 }
 
 export function handleProposalCreated(event: ProposalCreatedEvent): void {
@@ -16,7 +20,7 @@ export function handleProposalCreated(event: ProposalCreatedEvent): void {
   p.baseBudget = event.params.baseBudget;
   p.perProjectBudget = event.params.perProjectBudget;
   p.newDuration = event.params.newDuration;
-  p.end = BigInt.fromI32(event.params.end);
+  p.end = event.params.end;
   p.yes = BigInt.fromI32(0);
   p.no = BigInt.fromI32(0);
   p.executed = false;

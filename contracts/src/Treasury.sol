@@ -30,7 +30,6 @@ contract Treasury is ReentrancyGuard {
     address public owner;
     GlobalStakingPool public globalPool;
     address public slashingContract;
-    address public governance;
     address public anonGovernance;
     uint256 public immutable claimWindow;
     uint256 public targetTotal;
@@ -67,7 +66,6 @@ contract Treasury is ReentrancyGuard {
     event ProjectSlashed(uint256 indexed epoch, address indexed project, uint16 slashBps, bool blacklisted);
     event SlashRewardNotified(uint256 indexed epoch, address indexed project, uint256 amount);
     event SlashResolved(uint256 indexed epoch, address indexed project, uint256 voterReward);
-    event GovernanceSet(address indexed governance);
     event AnonGovernanceSet(address indexed anonGovernance);
     event OwnershipRenounced();
     event StaleDrained(uint256 amount);
@@ -116,13 +114,8 @@ contract Treasury is ReentrancyGuard {
         _;
     }
 
-    modifier onlyGovernance() {
-        if (msg.sender != governance) revert MatroidErrors.NotGovernance();
-        _;
-    }
-
     modifier onlyAnyGovernance() {
-        if (msg.sender != governance && msg.sender != anonGovernance) {
+        if (msg.sender != anonGovernance) {
             revert MatroidErrors.NotGovernance();
         }
         _;
@@ -167,13 +160,6 @@ contract Treasury is ReentrancyGuard {
         emit SlashingContractUpdated(address(0), slashing);
     }
 
-    function setGovernance(address governanceAddress) external onlyOwner {
-        if (governanceAddress == address(0)) revert MatroidErrors.ZeroAddress();
-        if (governance != address(0)) revert MatroidErrors.AlreadySet();
-        governance = governanceAddress;
-        emit GovernanceSet(governanceAddress);
-    }
-
     function setAnonGovernance(address anonGovernanceAddress) external onlyOwner {
         if (anonGovernanceAddress == address(0)) revert MatroidErrors.ZeroAddress();
         if (anonGovernance != address(0)) revert MatroidErrors.AlreadySet();
@@ -182,7 +168,7 @@ contract Treasury is ReentrancyGuard {
     }
 
     function renounceOwnership() external onlyOwner {
-        if (governance == address(0)) revert MatroidErrors.GovernanceNotSet();
+        if (anonGovernance == address(0)) revert MatroidErrors.GovernanceNotSet();
         owner = address(0);
         emit OwnershipRenounced();
     }

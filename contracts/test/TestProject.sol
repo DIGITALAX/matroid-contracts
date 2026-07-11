@@ -37,7 +37,7 @@ contract TestProject {
         emit OwnerUpdated(oldOwner, newOwner);
     }
 
-    function register(bytes32 metadata, bool pool) external onlyOwner {
+    function register(string calldata metadata, bool pool) external onlyOwner {
         matroidKit.registerProject(metadata, pool);
     }
 

@@ -73,7 +73,7 @@ contract GandaReactionPacks is ERC721Enumerable {
         uint256 price,
         uint256 editionNumber
     );
-    event ProjectRegistered(bytes32 metadata);
+    event ProjectRegistered(string metadata);
 
     constructor(
         address accessControlAddress,
@@ -98,7 +98,7 @@ contract GandaReactionPacks is ERC721Enumerable {
 
     }
 
-    function registerProject(bytes32 metadata) external onlyAdmin {
+    function registerProject(string calldata metadata) external onlyAdmin {
         if (projectRegistered) revert GandaErrors.AlreadyExists();
         matroidKit.registerProject(metadata, true);
         registry.setRewardSplits(GLOBAL_BPS, PROJECT_BPS, 0);

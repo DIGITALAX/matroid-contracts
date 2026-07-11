@@ -12,7 +12,11 @@ export function handleEnrolled(event: EnrolledEvent): void {
   counter.count = index + 1;
   counter.save();
 
-  let id = Bytes.fromHexString(event.params.identityCommitment.toHexString());
+  let commitmentHex = event.params.identityCommitment.toHexString().slice(2);
+  if (commitmentHex.length % 2 == 1) {
+    commitmentHex = "0" + commitmentHex;
+  }
+  let id = Bytes.fromHexString("0x" + commitmentHex);
   let e = new Enrollment(id);
   e.commitment = event.params.identityCommitment;
   e.leafIndex = index;

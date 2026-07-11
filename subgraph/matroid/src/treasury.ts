@@ -39,7 +39,11 @@ import {
 const GLOBAL_ID = Bytes.fromUTF8("global");
 
 function epochId(epoch: BigInt): Bytes {
-  return Bytes.fromHexString(epoch.toHexString());
+  let hex = epoch.toHexString().slice(2);
+  if (hex.length % 2 == 1) {
+    hex = "0" + hex;
+  }
+  return Bytes.fromHexString("0x" + hex);
 }
 
 function claimableId(epoch: BigInt, project: Bytes): Bytes {

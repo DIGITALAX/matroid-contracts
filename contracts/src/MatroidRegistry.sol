@@ -49,7 +49,7 @@ contract MatroidRegistry is ReentrancyGuard {
     address[] private _projectList;
     mapping(address => bool) private _listed;
 
-    event ProjectRegistered(address indexed project, bytes32 metadata);
+    event ProjectRegistered(address indexed project, string metadata);
     event ClaimerUpdated(
         address indexed project,
         address indexed claimer,
@@ -118,7 +118,7 @@ contract MatroidRegistry is ReentrancyGuard {
 
     function registerProject(
         address project,
-        bytes32 metadata,
+        string calldata metadata,
         bool pool
     ) external onlyMatroidKit {
         if (project == address(0)) revert MatroidErrors.ZeroAddress();
@@ -134,11 +134,13 @@ contract MatroidRegistry is ReentrancyGuard {
             _listed[project] = true;
         }
 
+        // registration event must precede pool creation: the subgraph's pool
+        // handler loads the Project entity created by ProjectRegistered
+        emit ProjectRegistered(project, metadata);
+
         if (pool) {
             _createPool(project);
         }
-
-        emit ProjectRegistered(project, metadata);
     }
 
     function createProjectPool() external {
