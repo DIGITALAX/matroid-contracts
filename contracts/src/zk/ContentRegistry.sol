@@ -2,13 +2,13 @@
 pragma solidity ^0.8.28;
 
 import {IVerifier} from "./IVerifier.sol";
-import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
+import {IdentityActionBase} from "./IdentityActionBase.sol";
 
 interface IBlacklist {
     function isBanned(address who) external view returns (bool);
 }
 
-contract ContentRegistry {
+contract ContentRegistry is IdentityActionBase {
     struct Content {
         address author;
         bytes32 ownerTag;
@@ -22,11 +22,10 @@ contract ContentRegistry {
         bool moderated;
     }
 
-    uint256 public constant POST_SCOPE = uint256(keccak256("matroid.content-post"));
+    bytes4 public constant POST_TAG = bytes4(keccak256("contentRegistry.post"));
+    bytes4 public constant EDIT_TAG = bytes4(keccak256("contentRegistry.edit"));
 
     IVerifier public immutable editVerifier;
-    ISemaphore public immutable semaphore;
-    uint256 public immutable groupId;
     IBlacklist public immutable blacklist;
 
     uint256 public contentCount;
@@ -36,8 +35,6 @@ contract ContentRegistry {
     event Updated(uint256 indexed id, bytes32 contentHash, uint64 version, bool revoked);
     event Moderated(uint256 indexed id, bytes32 canonicalTag);
 
-    error BadScope();
-    error BadProof();
     error NoContent();
     error AlreadyRevoked();
     error BadNonce();
@@ -47,27 +44,28 @@ contract ContentRegistry {
 
     constructor(
         address editVerifierAddress,
-        address semaphoreAddress,
-        uint256 groupId_,
+        address actionVerifierAddress,
+        address registryAddress,
         address blacklistAddress
-    ) {
+    ) IdentityActionBase(actionVerifierAddress, registryAddress) {
         editVerifier = IVerifier(editVerifierAddress);
-        semaphore = ISemaphore(semaphoreAddress);
-        groupId = groupId_;
         blacklist = IBlacklist(blacklistAddress);
     }
 
     function post(
-        ISemaphore.SemaphoreProof calldata proof,
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
         bytes32 contentHash,
         bytes32 ownerTag,
         bytes32 canonicalTag,
         bytes32 moderatorTag,
         string calldata contentUri
     ) external returns (uint256 id) {
-        if (proof.scope != POST_SCOPE) revert BadScope();
-        if (proof.message != uint256(contentHash)) revert BadProof();
-        if (!semaphore.verifyProof(groupId, proof)) revert BadProof();
+        bytes32 payloadHash = keccak256(
+            abi.encode(contentHash, ownerTag, canonicalTag, moderatorTag, keccak256(bytes(contentUri)))
+        );
+        _verifyAction(proof, POST_TAG, 0, payloadHash, nullifier, merkleRoot);
 
         id = contentCount;
         contentCount = id + 1;
@@ -120,7 +118,10 @@ contract ContentRegistry {
 
     function update(
         uint256 id,
-        bytes calldata proof,
+        bytes calldata ownerProof,
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
         bytes32 newContentHash,
         uint64 nonce
     ) external {
@@ -129,11 +130,14 @@ contract ContentRegistry {
         if (c.revoked) revert AlreadyRevoked();
         if (nonce != c.version) revert BadNonce();
 
+        bytes32 payloadHash = keccak256(abi.encode(id, newContentHash, nonce));
+        _verifyAction(actionProof, EDIT_TAG, uint256(payloadHash), payloadHash, nullifier, merkleRoot);
+
         bytes32[] memory pubInputs = new bytes32[](3);
         pubInputs[0] = c.ownerTag;
         pubInputs[1] = newContentHash;
         pubInputs[2] = bytes32(uint256(nonce));
-        if (!editVerifier.verify(proof, pubInputs)) revert BadProof();
+        if (!editVerifier.verify(ownerProof, pubInputs)) revert BadProof();
 
         c.contentHash = newContentHash;
         c.version = nonce + 1;
@@ -143,17 +147,26 @@ contract ContentRegistry {
         emit Updated(id, newContentHash, c.version, c.revoked);
     }
 
-    function moderate(uint256 id, bytes calldata proof) external {
+    function moderate(
+        uint256 id,
+        bytes calldata ownerProof,
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier
+    ) external {
         Content storage c = contents[id];
         if (!c.exists) revert NoContent();
         if (c.revoked) revert AlreadyRevoked();
         if (c.moderatorTag == bytes32(0)) revert NoCanonical();
 
+        bytes32 payloadHash = keccak256(abi.encode(id));
+        _verifyAction(actionProof, EDIT_TAG, uint256(payloadHash), payloadHash, nullifier, merkleRoot);
+
         bytes32[] memory pubInputs = new bytes32[](3);
         pubInputs[0] = c.moderatorTag;
         pubInputs[1] = bytes32(uint256(id));
         pubInputs[2] = bytes32(0);
-        if (!editVerifier.verify(proof, pubInputs)) revert BadProof();
+        if (!editVerifier.verify(ownerProof, pubInputs)) revert BadProof();
 
         c.contentHash = bytes32(0);
         c.revoked = true;

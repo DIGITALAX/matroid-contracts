@@ -3,13 +3,13 @@ pragma solidity ^0.8.28;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IVerifier} from "./IVerifier.sol";
-import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
+import {IdentityActionBase} from "./IdentityActionBase.sol";
 
 interface IBlacklist {
     function isBanned(address who) external view returns (bool);
 }
 
-contract KitRegistry is ERC721 {
+contract KitRegistry is ERC721, IdentityActionBase {
     enum Mode {
         Public,
         Anonymous
@@ -26,11 +26,10 @@ contract KitRegistry is ERC721 {
         Mode mode;
     }
 
-    uint256 public constant PUBLISH_SCOPE = uint256(keccak256("matroid.kit-publish"));
+    bytes4 public constant PUBLISH_TAG = bytes4(keccak256("kitRegistry.publish"));
+    bytes4 public constant EDIT_TAG = bytes4(keccak256("kitRegistry.edit"));
 
     IVerifier public immutable editVerifier;
-    ISemaphore public immutable semaphore;
-    uint256 public immutable groupId;
     IBlacklist public immutable blacklist;
 
     uint256 public kitCount;
@@ -42,7 +41,6 @@ contract KitRegistry is ERC721 {
     event KitRetagged(uint256 indexed id, bytes32 newOwnerTag);
     event KitClaimed(uint256 indexed id, address indexed owner);
 
-    error BadProof();
     error NoKit();
     error NotOwner();
     error AlreadyRevoked();
@@ -53,13 +51,11 @@ contract KitRegistry is ERC721 {
 
     constructor(
         address editVerifierAddress,
-        address semaphoreAddress,
-        uint256 groupId_,
+        address actionVerifierAddress,
+        address registryAddress,
         address blacklistAddress
-    ) ERC721("dx.computer Kit", "DXKIT") {
+    ) ERC721("dx.computer Kit", "DXKIT") IdentityActionBase(actionVerifierAddress, registryAddress) {
         editVerifier = IVerifier(editVerifierAddress);
-        semaphore = ISemaphore(semaphoreAddress);
-        groupId = groupId_;
         blacklist = IBlacklist(blacklistAddress);
     }
 
@@ -105,41 +101,51 @@ contract KitRegistry is ERC721 {
     }
 
     function publish(
-        ISemaphore.SemaphoreProof calldata proof,
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
         bytes32 designHash,
         bytes32 ownerTag,
         string calldata contentUri
     ) external returns (uint256 id) {
-        id = _publishAnon(proof, designHash, ownerTag, contentUri, 0);
+        id = _publishAnon(proof, merkleRoot, nullifier, designHash, ownerTag, contentUri, 0);
     }
 
     function fork(
         uint256 parentId,
-        ISemaphore.SemaphoreProof calldata proof,
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
         bytes32 designHash,
         bytes32 ownerTag,
         string calldata contentUri
     ) external returns (uint256 id) {
         if (!kits[parentId].exists) revert NoParent();
-        id = _publishAnon(proof, designHash, ownerTag, contentUri, parentId);
+        id = _publishAnon(proof, merkleRoot, nullifier, designHash, ownerTag, contentUri, parentId);
     }
 
     function _publishAnon(
-        ISemaphore.SemaphoreProof calldata proof,
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
         bytes32 designHash,
         bytes32 ownerTag,
         string calldata contentUri,
         uint256 parentId
     ) internal returns (uint256 id) {
-        if (proof.scope != PUBLISH_SCOPE) revert BadProof();
-        if (proof.message != uint256(designHash)) revert BadProof();
-        if (!semaphore.verifyProof(groupId, proof)) revert BadProof();
+        bytes32 payloadHash = keccak256(
+            abi.encode(designHash, ownerTag, keccak256(bytes(contentUri)), parentId)
+        );
+        _verifyAction(proof, PUBLISH_TAG, 0, payloadHash, nullifier, merkleRoot);
         id = _create(Mode.Anonymous, ownerTag, designHash, contentUri, parentId);
     }
 
     function pushVersion(
         uint256 id,
-        bytes calldata proof,
+        bytes calldata ownerProof,
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
         bytes32 newDesignHash,
         uint64 nonce,
         string calldata newContentUri
@@ -149,7 +155,13 @@ contract KitRegistry is ERC721 {
         if (k.revoked) revert AlreadyRevoked();
         if (k.mode != Mode.Anonymous) revert WrongMode();
         if (nonce != k.version) revert BadNonce();
-        _verifyOwner(proof, k.ownerTag, newDesignHash, nonce);
+        _verifyEdit(
+            actionProof,
+            merkleRoot,
+            nullifier,
+            keccak256(abi.encode(id, newDesignHash, nonce, keccak256(bytes(newContentUri))))
+        );
+        _verifyOwner(ownerProof, k.ownerTag, newDesignHash, nonce);
         k.designHash = newDesignHash;
         k.contentUri = newContentUri;
         k.version = nonce + 1;
@@ -157,13 +169,21 @@ contract KitRegistry is ERC721 {
         emit KitVersioned(id, newDesignHash, k.version, newContentUri);
     }
 
-    function remove(uint256 id, bytes calldata proof, uint64 nonce) external {
+    function remove(
+        uint256 id,
+        bytes calldata ownerProof,
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        uint64 nonce
+    ) external {
         Kit storage k = kits[id];
         if (!k.exists) revert NoKit();
         if (k.revoked) revert AlreadyRevoked();
         if (k.mode != Mode.Anonymous) revert WrongMode();
         if (nonce != k.version) revert BadNonce();
-        _verifyOwner(proof, k.ownerTag, bytes32(0), nonce);
+        _verifyEdit(actionProof, merkleRoot, nullifier, keccak256(abi.encode(id, nonce)));
+        _verifyOwner(ownerProof, k.ownerTag, bytes32(0), nonce);
         k.designHash = bytes32(0);
         k.contentUri = "";
         k.revoked = true;
@@ -171,30 +191,57 @@ contract KitRegistry is ERC721 {
         emit KitRemoved(id);
     }
 
-    function retag(uint256 id, bytes calldata proof, bytes32 newOwnerTag, uint64 nonce) external {
+    function retag(
+        uint256 id,
+        bytes calldata ownerProof,
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        bytes32 newOwnerTag,
+        uint64 nonce
+    ) external {
         Kit storage k = kits[id];
         if (!k.exists) revert NoKit();
         if (k.revoked) revert AlreadyRevoked();
         if (k.mode != Mode.Anonymous) revert WrongMode();
         if (nonce != k.version) revert BadNonce();
-        _verifyOwner(proof, k.ownerTag, newOwnerTag, nonce);
+        _verifyEdit(actionProof, merkleRoot, nullifier, keccak256(abi.encode(id, newOwnerTag, nonce)));
+        _verifyOwner(ownerProof, k.ownerTag, newOwnerTag, nonce);
         k.ownerTag = newOwnerTag;
         emit KitRetagged(id, newOwnerTag);
     }
 
-    function claim(uint256 id, address to, bytes calldata proof, uint64 nonce) external {
+    function claim(
+        uint256 id,
+        address to,
+        bytes calldata ownerProof,
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        uint64 nonce
+    ) external {
         if (blacklist.isBanned(to)) revert Banned();
         Kit storage k = kits[id];
         if (!k.exists) revert NoKit();
         if (k.revoked) revert AlreadyRevoked();
         if (k.mode != Mode.Anonymous) revert WrongMode();
         if (nonce != k.version) revert BadNonce();
-        _verifyOwner(proof, k.ownerTag, bytes32(uint256(uint160(to))), nonce);
+        _verifyEdit(actionProof, merkleRoot, nullifier, keccak256(abi.encode(id, to, nonce)));
+        _verifyOwner(ownerProof, k.ownerTag, bytes32(uint256(uint160(to))), nonce);
         k.mode = Mode.Public;
         k.ownerTag = bytes32(0);
         k.version = nonce + 1;
         _mint(to, id);
         emit KitClaimed(id, to);
+    }
+
+    function _verifyEdit(
+        bytes calldata actionProof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        bytes32 payloadHash
+    ) internal view {
+        _verifyAction(actionProof, EDIT_TAG, uint256(payloadHash), payloadHash, nullifier, merkleRoot);
     }
 
     function _verifyOwner(bytes calldata proof, bytes32 ownerTag, bytes32 newDesignHash, uint64 nonce) internal view {

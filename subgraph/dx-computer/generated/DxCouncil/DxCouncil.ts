@@ -73,8 +73,8 @@ export class Voted__Params {
     return this._event.parameters[1].value.toI32();
   }
 
-  get nullifier(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
+  get nullifier(): Bytes {
+    return this._event.parameters[2].value.toBytes();
   }
 }
 
@@ -105,7 +105,7 @@ export class Executed__Params {
 }
 
 export class DxCouncil__proposalsResult {
-  value0: BigInt;
+  value0: Bytes;
   value1: Bytes;
   value2: i32;
   value3: BigInt;
@@ -118,7 +118,7 @@ export class DxCouncil__proposalsResult {
   value10: BigInt;
 
   constructor(
-    value0: BigInt,
+    value0: Bytes,
     value1: Bytes,
     value2: i32,
     value3: BigInt,
@@ -145,7 +145,7 @@ export class DxCouncil__proposalsResult {
 
   toMap(): TypedMap<string, ethereum.Value> {
     let map = new TypedMap<string, ethereum.Value>();
-    map.set("value0", ethereum.Value.fromUnsignedBigInt(this.value0));
+    map.set("value0", ethereum.Value.fromFixedBytes(this.value0));
     map.set("value1", ethereum.Value.fromFixedBytes(this.value1));
     map.set(
       "value2",
@@ -165,7 +165,7 @@ export class DxCouncil__proposalsResult {
     return map;
   }
 
-  getIdentityRoot(): BigInt {
+  getIdentityRoot(): Bytes {
     return this.value0;
   }
 
@@ -218,12 +218,12 @@ export class DxCouncil extends ethereum.SmartContract {
   proposals(param0: BigInt): DxCouncil__proposalsResult {
     let result = super.call(
       "proposals",
-      "proposals(uint256):(uint256,bytes32,uint8,uint64,uint64,bool,bool,uint8,address,bool,uint256)",
+      "proposals(uint256):(bytes32,bytes32,uint8,uint64,uint64,bool,bool,uint8,address,bool,uint256)",
       [ethereum.Value.fromUnsignedBigInt(param0)],
     );
 
     return new DxCouncil__proposalsResult(
-      result[0].toBigInt(),
+      result[0].toBytes(),
       result[1].toBytes(),
       result[2].toI32(),
       result[3].toBigInt(),
@@ -242,7 +242,7 @@ export class DxCouncil extends ethereum.SmartContract {
   ): ethereum.CallResult<DxCouncil__proposalsResult> {
     let result = super.tryCall(
       "proposals",
-      "proposals(uint256):(uint256,bytes32,uint8,uint64,uint64,bool,bool,uint8,address,bool,uint256)",
+      "proposals(uint256):(bytes32,bytes32,uint8,uint64,uint64,bool,bool,uint8,address,bool,uint256)",
       [ethereum.Value.fromUnsignedBigInt(param0)],
     );
     if (result.reverted) {
@@ -251,7 +251,7 @@ export class DxCouncil extends ethereum.SmartContract {
     let value = result.value;
     return ethereum.CallResult.fromValue(
       new DxCouncil__proposalsResult(
-        value[0].toBigInt(),
+        value[0].toBytes(),
         value[1].toBytes(),
         value[2].toI32(),
         value[3].toBigInt(),

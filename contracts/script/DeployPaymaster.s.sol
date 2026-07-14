@@ -8,7 +8,7 @@ contract DeployPaymaster is Script {
     function run() external {
         address governance = vm.envOr("PAYMASTER_GOVERNANCE", address(0));
         uint256 defaultCap = vm.envOr("PAYMASTER_DEFAULT_CAP", uint256(1 ether));
-        uint256 fundAmount = vm.envOr("PAYMASTER_FUND", uint256(10 ether));
+        uint256 fundAmount = vm.envOr("PAYMASTER_FUND", uint256(1 ether));
 
         address identityRegistry = vm.envOr("IDENTITY_REGISTRY", address(0));
         address kitRegistry = vm.envOr("KIT_REGISTRY", address(0));

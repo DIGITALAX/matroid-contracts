@@ -5,13 +5,25 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "identityCommitment",
+        "name": "commitment",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "bytes32",
         "name": "enrollNullifier",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "leafIndex",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "root",
         "type": "bytes32"
       }
     ],

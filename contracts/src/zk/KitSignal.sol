@@ -1,45 +1,45 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity ^0.8.28;
 
-import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
+import {IdentityActionBase} from "./IdentityActionBase.sol";
 
-contract KitSignal {
-    ISemaphore public immutable semaphore;
-    uint256 public immutable groupId;
+contract KitSignal is IdentityActionBase {
+    bytes4 public constant SIGNAL_TAG = bytes4(keccak256("kitSignal.signal"));
 
     mapping(uint256 => mapping(uint8 => uint256)) public tally;
-    mapping(uint256 => mapping(uint256 => uint8)) public reactionChoice;
-    mapping(uint256 => mapping(uint256 => uint256)) public reactionNonce;
+    mapping(uint256 => mapping(bytes32 => uint8)) public reactionChoice;
+    mapping(uint256 => mapping(bytes32 => uint256)) public reactionNonce;
     mapping(uint256 => mapping(address => uint8)) public publicChoice;
 
-    event Signaled(uint256 indexed kitId, uint8 choice, uint256 nullifier);
+    event Signaled(uint256 indexed kitId, uint8 choice, bytes32 nullifier);
     event SignaledPublic(uint256 indexed kitId, uint8 choice, address indexed signaler);
 
-    error BadScope();
     error BadNonce();
     error StaleSignal();
     error InvalidChoice();
-    error BadProof();
 
-    constructor(address semaphoreAddress, uint256 groupId_) {
-        semaphore = ISemaphore(semaphoreAddress);
-        groupId = groupId_;
-    }
+    constructor(address verifierAddress, address rootsAddress)
+        IdentityActionBase(verifierAddress, rootsAddress)
+    {}
 
-    function signal(ISemaphore.SemaphoreProof calldata proof, uint256 kitId) external {
-        if (proof.scope != kitId) revert BadScope();
-        uint8 code = uint8(proof.message & 3);
-        uint256 nonce = proof.message >> 2;
+    function signal(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        uint256 kitId,
+        uint8 code,
+        uint256 nonce,
+        bytes32 nullifier
+    ) external {
         if (code > 2) revert InvalidChoice();
         if (nonce == 0) revert BadNonce();
-        if (!semaphore.verifyProof(groupId, proof)) revert BadProof();
 
-        uint256 nul = proof.nullifier;
-        if (nonce <= reactionNonce[kitId][nul]) revert StaleSignal();
-        reactionNonce[kitId][nul] = nonce;
+        bytes32 payloadHash = keccak256(abi.encode(code, nonce));
+        _verifyAction(proof, SIGNAL_TAG, kitId, payloadHash, nullifier, merkleRoot);
 
-        reactionChoice[kitId][nul] = _retally(kitId, reactionChoice[kitId][nul], code);
-        emit Signaled(kitId, code, nul);
+        if (nonce <= reactionNonce[kitId][nullifier]) revert StaleSignal();
+        reactionNonce[kitId][nullifier] = nonce;
+        reactionChoice[kitId][nullifier] = _retally(kitId, reactionChoice[kitId][nullifier], code);
+        emit Signaled(kitId, code, nullifier);
     }
 
     function signalPublic(uint256 kitId, uint8 code) external {

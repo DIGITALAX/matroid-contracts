@@ -6,9 +6,9 @@ schema:
 dataSources:
   - kind: ethereum
     name: KitRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xA1B809005E589f81dE6EF9F48D67e35606c05fC3"
+      address: "0x09265101Af7259CdcFd8c4C42CE872823e37f823"
       abi: KitRegistry
       startBlock: 0
     mapping:
@@ -32,9 +32,9 @@ dataSources:
       file: KitRegistry/KitRegistry.wasm
   - kind: ethereum
     name: GrantRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xc0431C32561DabE0c8FD791B52590BbBA413c235"
+      address: "0x7b7Ee5641DF2BFe3B6ae976D50f363a9D8718995"
       abi: GrantRegistry
       startBlock: 0
     mapping:
@@ -64,9 +64,9 @@ dataSources:
       file: GrantRegistry/GrantRegistry.wasm
   - kind: ethereum
     name: PrefabMarket
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xD49036D56f474152891D9eced770D6b90B2cEAE9"
+      address: "0x58f4b580c822698c36329eCF47FF2eF8828139e7"
       abi: PrefabMarket
       startBlock: 0
     mapping:
@@ -112,9 +112,9 @@ dataSources:
       file: PrefabMarket/PrefabMarket.wasm
   - kind: ethereum
     name: ContentRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xb1Ca5B44ef3627A3E5Ed7a6EE877D9D997A7c7ED"
+      address: "0xC5291AB762D90b25A0ce1d6865B983b2815f2965"
       abi: ContentRegistry
       startBlock: 0
     mapping:
@@ -134,9 +134,9 @@ dataSources:
       file: ContentRegistry/ContentRegistry.wasm
   - kind: ethereum
     name: CyberswagmanRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x996462e0eAf00bF6BF0Ea15F29d715C0eD3906F1"
+      address: "0xd0Edca81Ae742b87ABd8628211Da391df1A74dab"
       abi: CyberswagmanRegistry
       startBlock: 0
     mapping:
@@ -164,9 +164,9 @@ dataSources:
       file: CyberswagmanRegistry/CyberswagmanRegistry.wasm
   - kind: ethereum
     name: DxCouncil
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xf43624d811c5DC9eF91cF237ab9B8eE220D438eE"
+      address: "0x1386687AF46Be8Cbf59172748c08d6ea56C70334"
       abi: DxCouncil
       startBlock: 0
     mapping:
@@ -181,16 +181,16 @@ dataSources:
       eventHandlers:
         - event: ProposalCreated(indexed uint256,uint8,indexed address,bool,uint256,uint64,string)
           handler: handleProposalCreated
-        - event: Voted(indexed uint256,uint8,uint256)
+        - event: Voted(indexed uint256,uint8,bytes32)
           handler: handleVoted
         - event: Executed(indexed uint256,uint8,indexed address)
           handler: handleExecuted
       file: DxCouncil/DxCouncil.wasm
   - kind: ethereum
     name: IdentityRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x22F4D93be0E8C0C081e74c0d5e697B64eEA007FF"
+      address: "0xF86409FE1bC379E71Eee10A5F2A804Ec46816E69"
       abi: IdentityRegistry
       startBlock: 0
     mapping:
@@ -204,14 +204,14 @@ dataSources:
         - name: IdentityRegistry
           file: IdentityRegistry/IdentityRegistry.json
       eventHandlers:
-        - event: Enrolled(indexed uint256,bytes32)
+        - event: Enrolled(indexed uint256,bytes32,uint32,bytes32)
           handler: handleEnrolled
       file: IdentityRegistry/IdentityRegistry.wasm
   - kind: ethereum
     name: BalancePool
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x23ceE3FB585b1e5092b7CFB222e8e873B05E9519"
+      address: "0xeFC593F3146d347D1E677AFBD8788bB3775Ed429"
       abi: BalancePool
       startBlock: 0
     mapping:
@@ -231,9 +231,9 @@ dataSources:
       file: BalancePool/BalancePool.wasm
   - kind: ethereum
     name: Blacklist
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xe4C7fBB0a626ed208021ccabA6Be1566905E2dFc"
+      address: "0x049f513B723eAc5D72b31518A550C9aAECCF3fE5"
       abi: Blacklist
       startBlock: 0
     mapping:

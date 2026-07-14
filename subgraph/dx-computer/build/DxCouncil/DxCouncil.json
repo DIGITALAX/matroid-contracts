@@ -65,9 +65,9 @@
       },
       {
         "indexed": false,
-        "internalType": "uint256",
+        "internalType": "bytes32",
         "name": "nullifier",
-        "type": "uint256"
+        "type": "bytes32"
       }
     ],
     "name": "Voted",
@@ -109,9 +109,9 @@
     "name": "proposals",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bytes32",
         "name": "identityRoot",
-        "type": "uint256"
+        "type": "bytes32"
       },
       {
         "internalType": "bytes32",

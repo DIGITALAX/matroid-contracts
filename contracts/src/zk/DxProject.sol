@@ -16,6 +16,7 @@ interface IMatroidRegistry {
         uint16 projectErc20SplitBps,
         uint16 projectNftSplitBps
     ) external;
+    function updateMetadata(string calldata metadata) external;
 }
 
 interface ITreasuryClaim {
@@ -43,6 +44,7 @@ contract DxProject {
     event AdminSet(address indexed who, bool isAdmin);
     event RouterSet(address indexed who, bool isRouter);
     event Registered(string metadata, bool pool);
+    event MetadataUpdated(string metadata);
     event ClaimerSet(address indexed claimer, bool allowed);
     event Withdrawn(address indexed to, uint256 amount);
 
@@ -80,6 +82,13 @@ contract DxProject {
         registry.setClaimer(address(this), true);
         emit Registered(metadata, pool);
         emit ClaimerSet(address(this), true);
+    }
+
+    /// Replace this project's metadata URI in the MatroidRegistry; the registry
+    /// requires msg.sender to be the registered project, hence this passthrough.
+    function updateMetadata(string calldata metadata) external onlyAdmin {
+        registry.updateMetadata(metadata);
+        emit MetadataUpdated(metadata);
     }
 
     /// Authorize/deauthorize another address to claim this project's budget.

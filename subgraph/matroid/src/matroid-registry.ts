@@ -3,6 +3,7 @@ import {
   ClaimerUpdated as ClaimerUpdatedEvent,
   FlowRecorded as FlowRecordedEvent,
   MatroidRegistry,
+  ProjectMetadataUpdated as ProjectMetadataUpdatedEvent,
   ProjectPoolsCreated as ProjectPoolsCreatedEvent,
   ProjectRegistered as ProjectRegisteredEvent,
   RewardSplitsUpdated as RewardSplitsUpdatedEvent,
@@ -211,6 +212,24 @@ export function handleProjectRegistered(event: ProjectRegisteredEvent): void {
       global.projects = projects;
       global.save();
     }
+  }
+}
+
+export function handleProjectMetadataUpdated(
+  event: ProjectMetadataUpdatedEvent,
+): void {
+  let proyecto = Project.load(event.params.project);
+  if (proyecto) {
+    let uri = event.params.metadata;
+    proyecto.metadataUri = uri;
+    if (uri.startsWith("ipfs://")) {
+      let ipfsHash = uri.split("/").pop();
+      if (ipfsHash != null && ipfsHash.length > 0) {
+        proyecto.metadata = ipfsHash;
+        MetadataTemplate.create(ipfsHash);
+      }
+    }
+    proyecto.save();
   }
 }
 

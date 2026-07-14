@@ -3,8 +3,7 @@ pragma solidity ^0.8.28;
 
 import {IVerifier} from "./IVerifier.sol";
 import {IBalancePool} from "./IBalancePool.sol";
-import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
-import {ISemaphoreGroups} from "@semaphore-protocol/contracts/interfaces/ISemaphoreGroups.sol";
+import {IdentityActionBase} from "./IdentityActionBase.sol";
 
 interface ITreasuryGovernance {
     function setBudgets(uint256 newBaseBudget, uint256 newPerProjectBudget) external;
@@ -18,7 +17,11 @@ interface IPaymasterGovernance {
     function setBlacklisted(address project, bool banned) external;
 }
 
-contract MatroidAnonGovernance {
+interface IIdentityRegistryRoot {
+    function currentRoot() external view returns (bytes32);
+}
+
+contract MatroidAnonGovernance is IdentityActionBase {
     enum Kind {
         Budget,
         Bucket,
@@ -28,8 +31,11 @@ contract MatroidAnonGovernance {
         PmBlacklist
     }
 
+    bytes4 public constant VOTE_TAG = bytes4(keccak256("matroidAnonGovernance.vote"));
+    bytes4 public constant PROPOSE_TAG = bytes4(keccak256("matroidAnonGovernance.propose"));
+
     struct Proposal {
-        uint256 identityRoot;
+        bytes32 identityRoot;
         bytes32 poolRoot;
         uint8 bucket;
         uint64 start;
@@ -47,8 +53,6 @@ contract MatroidAnonGovernance {
     }
 
     IVerifier public immutable votingVerifier;
-    ISemaphore public immutable semaphore;
-    uint256 public immutable groupId;
     IBalancePool public immutable pool;
     ITreasuryGovernance public immutable treasury;
     IPaymasterGovernance public immutable paymaster;
@@ -59,11 +63,12 @@ contract MatroidAnonGovernance {
     mapping(uint256 => Proposal) public proposals;
     uint256 public proposalCount;
     mapping(uint256 => mapping(uint8 => uint256)) public tally;
+    mapping(uint256 => mapping(bytes32 => bool)) public usedNullifier;
 
     event ProposalCreated(uint256 indexed id, uint256 baseBudget, uint256 perProjectBudget, uint256 newDuration, uint64 end);
     event BucketProposalCreated(uint256 indexed id, uint8 newBucket, uint64 end);
     event PaymasterProposalCreated(uint256 indexed id, Kind kind, address project, uint256 value, bool flag, uint64 end);
-    event Voted(uint256 indexed id, uint8 choice, uint256 nullifier);
+    event Voted(uint256 indexed id, uint8 choice, bytes32 nullifier);
     event Executed(uint256 indexed id, bool passed, bool applied);
 
     error NoProposal();
@@ -71,28 +76,24 @@ contract MatroidAnonGovernance {
     error VotingOpen();
     error InvalidChoice();
     error AlreadyExecuted();
-    error BadProof();
-    error BadScope();
+    error AlreadyVoted();
     error StaleRoot();
     error BelowFloor();
     error BadBucket();
-    error ZeroAddress();
 
     constructor(
+        address actionVerifierAddress,
+        address registryAddress,
         address votingVerifierAddress,
-        address semaphoreAddress,
-        uint256 groupId_,
         address poolAddress,
         address treasuryAddress,
         address paymasterAddress,
         uint64 votingWindow_,
         uint256 quorum_,
         uint256 quorumFloor_
-    ) {
+    ) IdentityActionBase(actionVerifierAddress, registryAddress) {
         if (quorum_ < quorumFloor_) revert BelowFloor();
         votingVerifier = IVerifier(votingVerifierAddress);
-        semaphore = ISemaphore(semaphoreAddress);
-        groupId = groupId_;
         pool = IBalancePool(poolAddress);
         treasury = ITreasuryGovernance(treasuryAddress);
         paymaster = IPaymasterGovernance(paymasterAddress);
@@ -101,10 +102,15 @@ contract MatroidAnonGovernance {
         quorumFloor = quorumFloor_;
     }
 
-    function propose(uint256 baseBudget, uint256 perProjectBudget, uint256 newDuration)
-        external
-        returns (uint256 id)
-    {
+    function propose(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        uint256 baseBudget,
+        uint256 perProjectBudget,
+        uint256 newDuration
+    ) external returns (uint256 id) {
+        _verifyPropose(proof, merkleRoot, nullifier, Kind.Budget, address(0), false, baseBudget, perProjectBudget, newDuration);
         id = _create(Kind.Budget);
         Proposal storage p = proposals[id];
         p.baseBudget = baseBudget;
@@ -113,16 +119,29 @@ contract MatroidAnonGovernance {
         emit ProposalCreated(id, baseBudget, perProjectBudget, newDuration, p.end);
     }
 
-    function proposeBucket(uint8 newBucket) external returns (uint256 id) {
+    function proposeBucket(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        uint8 newBucket
+    ) external returns (uint256 id) {
         if (newBucket >= pool.bucketCount()) revert BadBucket();
+        _verifyPropose(proof, merkleRoot, nullifier, Kind.Bucket, address(0), false, uint256(newBucket), 0, 0);
         id = _create(Kind.Bucket);
         Proposal storage p = proposals[id];
         p.newBucket = newBucket;
         emit BucketProposalCreated(id, newBucket, p.end);
     }
 
-    function proposeCap(address project, uint256 cap) external returns (uint256 id) {
+    function proposeCap(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        address project,
+        uint256 cap
+    ) external returns (uint256 id) {
         if (project == address(0)) revert ZeroAddress();
+        _verifyPropose(proof, merkleRoot, nullifier, Kind.PmCap, project, false, cap, 0, 0);
         id = _create(Kind.PmCap);
         Proposal storage p = proposals[id];
         p.pmProject = project;
@@ -130,15 +149,28 @@ contract MatroidAnonGovernance {
         emit PaymasterProposalCreated(id, Kind.PmCap, project, cap, false, p.end);
     }
 
-    function proposeDefaultCap(uint256 cap) external returns (uint256 id) {
+    function proposeDefaultCap(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        uint256 cap
+    ) external returns (uint256 id) {
+        _verifyPropose(proof, merkleRoot, nullifier, Kind.PmDefaultCap, address(0), false, cap, 0, 0);
         id = _create(Kind.PmDefaultCap);
         Proposal storage p = proposals[id];
         p.pmValue = cap;
         emit PaymasterProposalCreated(id, Kind.PmDefaultCap, address(0), cap, false, p.end);
     }
 
-    function proposeRegister(address project, bool active) external returns (uint256 id) {
+    function proposeRegister(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        address project,
+        bool active
+    ) external returns (uint256 id) {
         if (project == address(0)) revert ZeroAddress();
+        _verifyPropose(proof, merkleRoot, nullifier, Kind.PmRegister, project, active, 0, 0, 0);
         id = _create(Kind.PmRegister);
         Proposal storage p = proposals[id];
         p.pmProject = project;
@@ -146,13 +178,35 @@ contract MatroidAnonGovernance {
         emit PaymasterProposalCreated(id, Kind.PmRegister, project, 0, active, p.end);
     }
 
-    function proposeBlacklist(address project, bool banned) external returns (uint256 id) {
+    function proposeBlacklist(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        address project,
+        bool banned
+    ) external returns (uint256 id) {
         if (project == address(0)) revert ZeroAddress();
+        _verifyPropose(proof, merkleRoot, nullifier, Kind.PmBlacklist, project, banned, 0, 0, 0);
         id = _create(Kind.PmBlacklist);
         Proposal storage p = proposals[id];
         p.pmProject = project;
         p.pmFlag = banned;
         emit PaymasterProposalCreated(id, Kind.PmBlacklist, project, 0, banned, p.end);
+    }
+
+    function _verifyPropose(
+        bytes calldata proof,
+        bytes32 merkleRoot,
+        bytes32 nullifier,
+        Kind kind,
+        address project,
+        bool flag,
+        uint256 v1,
+        uint256 v2,
+        uint256 v3
+    ) internal view {
+        bytes32 payloadHash = keccak256(abi.encode(uint8(kind), project, flag, v1, v2, v3));
+        _verifyAction(proof, PROPOSE_TAG, uint256(payloadHash), payloadHash, nullifier, merkleRoot);
     }
 
     function _create(Kind kind) internal returns (uint256 id) {
@@ -162,7 +216,7 @@ contract MatroidAnonGovernance {
         uint64 end = start + votingWindow;
         uint8 bucket = pool.activeBucket();
         Proposal storage p = proposals[id];
-        p.identityRoot = ISemaphoreGroups(address(semaphore)).getMerkleTreeRoot(groupId);
+        p.identityRoot = IIdentityRegistryRoot(address(identityRoots)).currentRoot();
         p.poolRoot = pool.currentRoot(bucket);
         p.bucket = bucket;
         p.start = start;
@@ -172,31 +226,32 @@ contract MatroidAnonGovernance {
     }
 
     function vote(
-        ISemaphore.SemaphoreProof calldata voteProof,
+        bytes calldata voteProof,
         bytes calldata poolZkProof,
         bytes32 poolRoot,
-        uint256 proposalId
+        uint256 proposalId,
+        uint8 choice,
+        bytes32 nullifier
     ) external {
         Proposal storage p = proposals[proposalId];
         if (!p.exists) revert NoProposal();
         if (block.timestamp < p.start || block.timestamp >= p.end) revert VotingClosed();
-        uint256 scopeVal = uint256(keccak256(abi.encode(address(this), proposalId)));
-        if (voteProof.scope != scopeVal) revert BadScope();
-        if (voteProof.merkleTreeRoot != p.identityRoot) revert StaleRoot();
         if (poolRoot != p.poolRoot && poolRoot != pool.currentRoot(p.bucket)) revert StaleRoot();
-        uint8 choice = uint8(voteProof.message);
         if (choice > 1) revert InvalidChoice();
+        if (usedNullifier[proposalId][nullifier]) revert AlreadyVoted();
 
-        semaphore.validateProof(groupId, voteProof);
+        bytes32 payloadHash = keccak256(abi.encode(choice));
+        uint256 scope = _verifyAction(voteProof, VOTE_TAG, proposalId, payloadHash, nullifier, p.identityRoot);
 
         bytes32[] memory poolPub = new bytes32[](3);
         poolPub[0] = poolRoot;
-        poolPub[1] = bytes32(uint256(keccak256(abi.encode(scopeVal))) >> 8);
-        poolPub[2] = bytes32(voteProof.nullifier);
+        poolPub[1] = bytes32(scope);
+        poolPub[2] = nullifier;
         if (!votingVerifier.verify(poolZkProof, poolPub)) revert BadProof();
 
+        usedNullifier[proposalId][nullifier] = true;
         tally[proposalId][choice] += 1;
-        emit Voted(proposalId, choice, voteProof.nullifier);
+        emit Voted(proposalId, choice, nullifier);
     }
 
     function execute(uint256 proposalId) external {

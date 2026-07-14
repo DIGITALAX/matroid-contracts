@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: MatroidRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x29c6fF2E3D04a9f37e7af1fF9b38C9E2e9079FfA"
+      address: "0x31D207d79644EaFe086d906112136E0b1da9aa33"
       abi: MatroidRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -35,16 +35,18 @@ dataSources:
           handler: handleProjectPoolsCreated
         - event: ProjectRegistered(indexed address,string)
           handler: handleProjectRegistered
+        - event: ProjectMetadataUpdated(indexed address,string)
+          handler: handleProjectMetadataUpdated
         - event: RewardSplitsUpdated(indexed address,uint16,uint16,uint16)
           handler: handleRewardSplitsUpdated
       file: ./src/matroid-registry.ts
   - kind: ethereum
     name: MatroidKit
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xd4567AA4Fd1B32A16c16CBFF9D9a69e51CF72293"
+      address: "0x930AA8B963a7e26e8977323d59Daa691DbE09C83"
       abi: MatroidKit
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -66,11 +68,11 @@ dataSources:
       file: ./src/matroid-kit.ts
   - kind: ethereum
     name: Treasury
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xfC3c03385dA8D5Adfb8BDF5f5fe156fb5B3a6Ee2"
+      address: "0xEAb1473AF54213e20eBc63529D9172E0940648A1"
       abi: Treasury
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -122,11 +124,11 @@ dataSources:
       file: ./src/treasury.ts
   - kind: ethereum
     name: SlashingCouncil
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x1055780Bd25e2F698E7c9a95FBaf4cb565A23A14"
+      address: "0xCe358F3C413674BDB1bcc7e4B9DabC4748a1eF63"
       abi: SlashingCouncil
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -154,11 +156,11 @@ dataSources:
       file: ./src/slashing-council.ts
   - kind: ethereum
     name: GlobalStakingPool
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x3ccA24e1A0e49654bc3482ab70199b7400eb7A3a"
+      address: "0x99f628Afa165Fc5FC9d9440a2fB1dCAAA4e46C09"
       abi: GlobalStakingPool
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -184,11 +186,11 @@ dataSources:
       file: ./src/global-staking-pool.ts
   - kind: ethereum
     name: MatroidAnonGovernance
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xE015ADD43D2C41e8Af4e9238e389101884853896"
+      address: "0xeb718A7969B461E15d5Ae8EE685f776F1A6cDA03"
       abi: MatroidAnonGovernance
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -201,18 +203,18 @@ dataSources:
       eventHandlers:
         - event: ProposalCreated(indexed uint256,uint256,uint256,uint256,uint64)
           handler: handleProposalCreated
-        - event: Voted(indexed uint256,uint8,uint256)
+        - event: Voted(indexed uint256,uint8,bytes32)
           handler: handleVoted
         - event: Executed(indexed uint256,bool,bool)
           handler: handleExecuted
       file: ./src/matroid-anon-governance.ts
   - kind: ethereum
     name: IdentityRegistry
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x22F4D93be0E8C0C081e74c0d5e697B64eEA007FF"
+      address: "0xF86409FE1bC379E71Eee10A5F2A804Ec46816E69"
       abi: IdentityRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -224,16 +226,16 @@ dataSources:
         - name: IdentityRegistry
           file: ./abis/IdentityRegistry.json
       eventHandlers:
-        - event: Enrolled(indexed uint256,bytes32)
+        - event: Enrolled(indexed uint256,bytes32,uint32,bytes32)
           handler: handleEnrolled
       file: ./src/identity-registry.ts
   - kind: ethereum
     name: BalancePool
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0xEBf9D3ead9A8c2bb8cEa438B8Dfa9f1AFf44bfa7"
+      address: "0x09cb0C28e0Eb27c661EBD4069b4202042B547dA4"
       abi: BalancePool
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -251,11 +253,11 @@ dataSources:
       file: ./src/balance-pool.ts
   - kind: ethereum
     name: SponsorVault
-    network: anvil
+    network: lens-testnet
     source:
-      address: "0x1A2894885076934dAf5a398Ff216c6d665707bbA"
+      address: "0x66c9502B178dB7f1e72DBa4F9BC4429BC1a08276"
       abi: SponsorVault
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -277,7 +279,7 @@ dataSources:
 templates:
   - name: ProjectStakingPool
     kind: ethereum/contract
-    network: anvil
+    network: lens-testnet
     source:
       abi: ProjectStakingPool
     mapping:
@@ -306,7 +308,7 @@ templates:
           handler: handleClaimed
   - name: ProjectNFTStakingPool
     kind: ethereum/contract
-    network: anvil
+    network: lens-testnet
     source:
       abi: ProjectNFTStakingPool
     mapping:

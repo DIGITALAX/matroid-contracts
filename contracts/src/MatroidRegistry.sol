@@ -73,6 +73,7 @@ contract MatroidRegistry is ReentrancyGuard {
         uint256 amount,
         bool isIn
     );
+    event ProjectMetadataUpdated(address indexed project, string metadata);
     event ProjectLeft(address indexed project);
     event ProjectErased(address indexed project);
     event EpochErased(address indexed project, uint256 indexed epoch);
@@ -145,6 +146,13 @@ contract MatroidRegistry is ReentrancyGuard {
 
     function createProjectPool() external {
         _createPool(msg.sender);
+    }
+
+    function updateMetadata(string calldata metadata) external {
+        MatroidLibrary.Project storage info = _projects[msg.sender];
+        if (!info.registered) revert MatroidErrors.ProjectNotRegistered();
+        info.metadata = metadata;
+        emit ProjectMetadataUpdated(msg.sender, metadata);
     }
 
     function leave() external {

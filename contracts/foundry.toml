@@ -8,7 +8,6 @@ libs = ["lib"]
 remappings = [
   "@openzeppelin/=lib/openzeppelin-contracts/",
   "forge-std/=lib/forge-std/src/",
-  "@semaphore-protocol/contracts/=lib/semaphore/packages/contracts/contracts/",
   "@zk-kit/lean-imt.sol/=node_modules/@zk-kit/lean-imt.sol/",
   "poseidon-solidity/=node_modules/poseidon-solidity/"
 ]
@@ -18,7 +17,9 @@ via_ir = true
 fs_permissions = [
   { access = "read-write", path = "./deployments" },
   { access = "read", path = "./zkout" },
+  { access = "read", path = "./test" },
 ]
+
 
 [profile.default.zksync]
 compile = false

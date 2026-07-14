@@ -61,6 +61,10 @@ contract TestProject {
         registry.setClaimer(claimer, allowed);
     }
 
+    function updateMetadata(string calldata metadata) external onlyOwner {
+        registry.updateMetadata(metadata);
+    }
+
     function createProjectPool() external onlyOwner {
         registry.createProjectPool();
     }

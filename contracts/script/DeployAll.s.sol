@@ -2,10 +2,6 @@
 pragma solidity ^0.8.28;
 
 import "forge-std/Script.sol";
-import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
-import {ISemaphoreVerifier} from "@semaphore-protocol/contracts/interfaces/ISemaphoreVerifier.sol";
-import {Semaphore} from "@semaphore-protocol/contracts/Semaphore.sol";
-import {SemaphoreVerifierZk} from "../src/zk/verifiers/SemaphoreVerifierZk.sol";
 
 // matroid
 import {StakingFactory} from "../src/StakingFactory.sol";
@@ -26,6 +22,7 @@ import {ContentRegistry} from "../src/zk/ContentRegistry.sol";
 import {KitSignal} from "../src/zk/KitSignal.sol";
 import {Blacklist} from "../src/zk/Blacklist.sol";
 import {IdentityRegistry} from "../src/zk/IdentityRegistry.sol";
+import {IdentityAction} from "../src/zk/IdentityAction.sol";
 import {BalancePool} from "../src/zk/BalancePool.sol";
 import {DxCouncil} from "../src/zk/DxCouncil.sol";
 import {MatroidAnonGovernance} from "../src/zk/MatroidAnonGovernance.sol";
@@ -36,6 +33,11 @@ import {TestMona} from "../src/zk/testing/TestMona.sol";
 import {PoseidonHasher} from "../src/zk/PoseidonHasher.sol";
 import {TestNFT} from "../src/zk/testing/TestNFT.sol";
 import {MatroidLibrary} from "../src/MatroidLibrary.sol";
+
+import {EditVerifier} from "../src/zk/verifiers/EditVerifier.sol";
+import {EnrollmentVerifier} from "../src/zk/verifiers/EnrollmentVerifier.sol";
+import {VotingVerifier} from "../src/zk/verifiers/VotingVerifier.sol";
+import {IdentityActionVerifier} from "../src/zk/verifiers/IdentityActionVerifier.sol";
 
 /// One integrated deploy: matroid (real Treasury/Registry/Staking/Governance) +
 /// dx.app wired into it as a registered project, sharing ONE MONA.
@@ -53,9 +55,8 @@ contract DeployAll is Script {
     address public globalStakingPool;
     address public stakingFactory;
     address public slashingCouncil;
-    address public semaphore;
-    uint256 public groupId;
     address public identityRegistry;
+    address public identityAction;
     address public dxBalancePool;
     address public matroidBalancePool;
     address public blacklist;
@@ -78,6 +79,7 @@ contract DeployAll is Script {
         address enrollV = vm.envOr("ENROLLMENT_VERIFIER", address(0));
         address votingV = vm.envOr("VOTING_VERIFIER", address(0));
         address editV = vm.envOr("EDIT_VERIFIER", address(0));
+        address actionV = vm.envOr("IDENTITY_ACTION_VERIFIER", address(0));
         address gasPool = vm.envOr("GAS_POOL", address(0));
         address monaEnv = vm.envOr("MONA", address(0));
 
@@ -85,7 +87,7 @@ contract DeployAll is Script {
         (, deployer, ) = vm.readCallers();
         _deployMatroid(monaEnv);
         _createPaymaster();
-        _deployDx(poseidon, enrollV, votingV, editV, gasPool == address(0) ? paymaster : gasPool);
+        _deployDx(poseidon, enrollV, votingV, editV, actionV, gasPool == address(0) ? paymaster : gasPool);
         _wirePaymaster();
         vm.stopBroadcast();
 
@@ -98,7 +100,7 @@ contract DeployAll is Script {
     }
 
     function _wirePaymaster() internal {
-        uint256 fundAmount = vm.envOr("PAYMASTER_FUND", uint256(10 ether));
+        uint256 fundAmount = vm.envOr("PAYMASTER_FUND", uint256(1 ether));
         MatroidPaymaster pm = MatroidPaymaster(payable(paymaster));
 
         pm.setRegistered(identityRegistry, true);
@@ -152,30 +154,26 @@ contract DeployAll is Script {
         tr.setSlashingContract(address(sc));
     }
 
-    function _deployDx(address poseidon, address enrollVerifier, address votingVerifier, address editVerifier, address gasPool) internal {
-        SemaphoreVerifierZk sv = new SemaphoreVerifierZk();
-        semaphore = address(new Semaphore(ISemaphoreVerifier(address(sv))));
-
-        require(enrollVerifier != address(0), "ENROLLMENT_VERIFIER env required");
-        require(votingVerifier != address(0), "VOTING_VERIFIER env required");
-        require(editVerifier != address(0), "EDIT_VERIFIER env required");
-        address enrollX = enrollVerifier;
-        address votingX = votingVerifier;
-        address editX = editVerifier;
+    function _deployDx(address poseidon, address enrollVerifier, address votingVerifier, address editVerifier, address actionVerifier, address gasPool) internal {
+        address enrollX = enrollVerifier == address(0) ? address(new EnrollmentVerifier()) : enrollVerifier;
+        address votingX = votingVerifier == address(0) ? address(new VotingVerifier()) : votingVerifier;
+        address editX = editVerifier == address(0) ? address(new EditVerifier()) : editVerifier;
+        address actionX = actionVerifier == address(0) ? address(new IdentityActionVerifier()) : actionVerifier;
         address gp = gasPool;
 
-        IdentityRegistry idr = new IdentityRegistry(enrollX, semaphore);
+        address hasherAddr = poseidon == address(0) ? address(new PoseidonHasher()) : poseidon;
+
+        IdentityRegistry idr = new IdentityRegistry(enrollX, hasherAddr);
         identityRegistry = address(idr);
-        groupId = idr.groupId();
+        identityAction = address(new IdentityAction(actionX, identityRegistry));
 
         blacklist = address(new Blacklist(msg.sender));
-        address hasherAddr = poseidon == address(0) ? address(new PoseidonHasher()) : poseidon;
         uint8 initialBucket = uint8(vm.envOr("POOL_INITIAL_BUCKET", uint256(0)));
         uint64 anonWindow = uint64(vm.envOr("ANON_WINDOW_SECONDS", uint256(5 minutes)));
         dxBalancePool = address(new BalancePool(hasherAddr, mona, initialBucket));
         matroidBalancePool = address(new BalancePool(hasherAddr, mona, initialBucket));
-        dxCouncil = address(new DxCouncil(votingX, semaphore, groupId, dxBalancePool, blacklist, anonWindow, 1, 1));
-        matroidAnonGovernance = address(new MatroidAnonGovernance(votingX, semaphore, groupId, matroidBalancePool, treasury, paymaster, anonWindow, 1, 1));
+        dxCouncil = address(new DxCouncil(actionX, identityRegistry, votingX, dxBalancePool, blacklist, anonWindow, 1, 1));
+        matroidAnonGovernance = address(new MatroidAnonGovernance(actionX, identityRegistry, votingX, matroidBalancePool, treasury, paymaster, anonWindow, 1, 1));
         address[] memory dxCouncils = new address[](1);
         dxCouncils[0] = dxCouncil;
         BalancePool(dxBalancePool).setGovernance(dxCouncils);
@@ -184,7 +182,7 @@ contract DeployAll is Script {
         BalancePool(matroidBalancePool).setGovernance(matroidCouncils);
         Treasury(treasury).setAnonGovernance(matroidAnonGovernance);
 
-        kitRegistry = address(new KitRegistry(editX, semaphore, groupId, blacklist));
+        kitRegistry = address(new KitRegistry(editX, actionX, identityRegistry, blacklist));
         grantRegistry = address(new GrantRegistry(mona, blacklist));
         cyberswagmanRegistry = address(new CyberswagmanRegistry(blacklist));
         sponsorVault = address(new SponsorVault(gp, mona));
@@ -193,14 +191,14 @@ contract DeployAll is Script {
         dxProject = address(dxp);
 
         prefabMarket = address(new PrefabMarket(mona, sponsorVault, treasury, grantRegistry, cyberswagmanRegistry, 500, 0, blacklist, dxProject));
-        contentRegistry = address(new ContentRegistry(editX, semaphore, groupId, blacklist));
-        kitSignal = address(new KitSignal(semaphore, groupId));
+        contentRegistry = address(new ContentRegistry(editX, actionX, identityRegistry, blacklist));
+        kitSignal = address(new KitSignal(actionX, identityRegistry));
 
         Blacklist(blacklist).setSetter(dxCouncil, true);
         Blacklist(blacklist).setSetter(grantRegistry, true);
 
         dxp.register(
-            vm.envOr("DX_METADATA_URI", string("ipfs://QmWhWJVx3x1z4zoXmoQj3gYcBR1n9w6ZHe6tHEqsa6jPM3")),
+            vm.envOr("DX_METADATA_URI", string("ipfs://QmSZadH1Et2NdDvME7YXHpYTCVwNF1nHLzbf1ht2PrGRAQ")),
             true
         );
         dxp.setRewardSplits(2000, 3000, 1000);
@@ -224,9 +222,8 @@ contract DeployAll is Script {
         vm.serializeAddress(json, "globalStakingPool", globalStakingPool);
         vm.serializeAddress(json, "stakingFactory", stakingFactory);
         vm.serializeAddress(json, "slashingCouncil", slashingCouncil);
-        vm.serializeAddress(json, "semaphore", semaphore);
-        vm.serializeUint(json, "groupId", groupId);
         vm.serializeAddress(json, "identityRegistry", identityRegistry);
+        vm.serializeAddress(json, "identityAction", identityAction);
         vm.serializeAddress(json, "dxBalancePool", dxBalancePool);
         vm.serializeAddress(json, "matroidBalancePool", matroidBalancePool);
         vm.serializeAddress(json, "blacklist", blacklist);
@@ -243,6 +240,6 @@ contract DeployAll is Script {
         vm.serializeAddress(json, "paymaster", paymaster);
         vm.serializeUint(json, "chainId", block.chainid);
         string memory finalJson = vm.serializeAddress(json, "dxProject", dxProject);
-        vm.writeJson(finalJson, "./deployments/all.anvil.json");
+        vm.writeJson(finalJson, string.concat("./deployments/all.", vm.toString(block.chainid), ".json"));
     }
 }

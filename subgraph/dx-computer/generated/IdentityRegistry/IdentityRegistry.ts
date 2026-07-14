@@ -23,12 +23,20 @@ export class Enrolled__Params {
     this._event = event;
   }
 
-  get identityCommitment(): BigInt {
+  get commitment(): BigInt {
     return this._event.parameters[0].value.toBigInt();
   }
 
   get enrollNullifier(): Bytes {
     return this._event.parameters[1].value.toBytes();
+  }
+
+  get leafIndex(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get root(): Bytes {
+    return this._event.parameters[3].value.toBytes();
   }
 }
 
