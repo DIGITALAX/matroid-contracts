@@ -1,142 +1,181 @@
-type GandaDeactivated @entity(immutable: true) {
-  id: Bytes!
-  ganadaId: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Game @entity {
+  id: ID!
+  gameId: BigInt!
+  ownerTag: Bytes!
+  scorer: Bytes!
+  uri: String!
+  version: BigInt!
+  publishedAt: BigInt!
+  removed: Boolean!
+  removedByAdmin: Boolean!
+  erased: Boolean!
+  banned: Boolean!
+  versions: [GameVersion!]! @derivedFrom(field: "game")
+  flows: [Flow!]! @derivedFrom(field: "game")
+  epochs: [GameEpoch!]! @derivedFrom(field: "game")
 }
 
-type GandaRegistered @entity(immutable: true) {
-  id: Bytes!
-  ganadaId: BigInt! # uint256
-  creator: Bytes! # address
-  uri: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type GameVersion @entity(immutable: true) {
+  id: ID!
+  game: Game!
+  scorer: Bytes!
+  version: BigInt!
+  uri: String!
+  timestamp: BigInt!
 }
 
-type GandaUpdated @entity(immutable: true) {
-  id: Bytes!
-  ganadaId: BigInt! # uint256
-  uri: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Flow @entity(immutable: true) {
+  id: ID!
+  game: Game!
+  isIn: Boolean!
+  wallet: Bytes!
+  amount: BigInt!
+  destination: Bytes
+  epoch: BigInt!
+  timestamp: BigInt!
+  txHash: Bytes!
 }
 
-type ReactionSubmitted @entity(immutable: true) {
-  id: Bytes!
-  ganadaId: BigInt! # uint256
-  reactionId: BigInt! # uint256
-  reviewer: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-type Approval @entity(immutable: true) {
-  id: Bytes!
-  owner: Bytes! # address
-  approved: Bytes! # address
-  tokenId: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type GameEpoch @entity {
+  id: ID!
+  game: Game!
+  epoch: BigInt!
+  volumeIn: BigInt!
+  volumeOut: BigInt!
+  flowCount: BigInt!
+  potFunded: BigInt!
+  totalPoints: BigInt!
+  playerCount: BigInt!
+  potClaimed: Boolean!
+  potClaimAmount: BigInt!
 }
 
-type ApprovalForAll @entity(immutable: true) {
-  id: Bytes!
-  owner: Bytes! # address
-  operator: Bytes! # address
-  approved: Boolean! # bool
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type ScoreSubmission @entity(immutable: true) {
+  id: ID!
+  game: Game!
+  epoch: BigInt!
+  playerKey: Bytes!
+  points: BigInt!
+  anonymous: Boolean!
+  timestamp: BigInt!
 }
 
-type PackPurchased @entity(immutable: true) {
-  id: Bytes!
-  buyer: Bytes! # address
-  purchaseId: BigInt! # uint256
-  packId: BigInt! # uint256
-  price: BigInt! # uint256
-  editionNumber: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type PlayerEpochGame @entity {
+  id: ID!
+  epoch: BigInt!
+  game: Game!
+  playerKey: Bytes!
+  points: BigInt!
 }
 
-type ProjectRegistered @entity(immutable: true) {
-  id: Bytes!
-  metadata: Bytes! # bytes32
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type PlayerEpoch @entity {
+  id: ID!
+  epoch: BigInt!
+  playerKey: Bytes!
+  gameIds: [String!]!
+  playerEpochGameIds: [String!]!
+  erased: Boolean!
+  claimed: Boolean!
+  claimPayout: Bytes
+  claimAmount: BigInt!
 }
 
-type ReactionAdded @entity(immutable: true) {
-  id: Bytes!
-  packId: BigInt! # uint256
-  reactionId: BigInt! # uint256
-  reactionUri: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Pot @entity {
+  id: ID!
+  epoch: BigInt!
+  funded: BigInt!
+  playerClaimed: BigInt!
+  gameClaimed: BigInt!
+  rolledOut: BigInt!
+  rolledIn: BigInt!
 }
 
-type ReactionPackCreated @entity(immutable: true) {
-  id: Bytes!
-  designer: Bytes! # address
-  packId: BigInt! # uint256
-  basePrice: BigInt! # uint256
-  maxEditions: BigInt! # uint256
-  holderReservedSpots: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type PotClaim @entity(immutable: true) {
+  id: ID!
+  epoch: BigInt!
+  kind: String!
+  playerKey: Bytes
+  game: Game
+  payout: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
 }
 
-type Transfer @entity(immutable: true) {
-  id: Bytes!
-  from: Bytes! # address
-  to: Bytes! # address
-  tokenId: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-type DesignerDeactivated @entity(immutable: true) {
-  id: Bytes!
-  designerId: BigInt! # uint256
-  inviter: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type DesignerInvited @entity(immutable: true) {
-  id: Bytes!
-  designer: Bytes! # address
-  inviter: Bytes! # address
-  designerId: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Proposal @entity {
+  id: ID!
+  proposalId: BigInt!
+  kind: Int!
+  target: BigInt!
+  tagTarget: Bytes!
+  value: BigInt!
+  uri: String!
+  yes: BigInt!
+  no: BigInt!
+  start: BigInt!
+  end: BigInt!
+  executed: Boolean!
+  passed: Boolean!
+  votes: [Vote!]! @derivedFrom(field: "proposal")
 }
 
-type DesignerURI @entity(immutable: true) {
-  id: Bytes!
-  designerId: BigInt! # uint256
-  uri: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Vote @entity(immutable: true) {
+  id: ID!
+  proposal: Proposal!
+  nullifier: Bytes!
+  support: Boolean!
+  timestamp: BigInt!
 }
 
-type ReactionPacksUpdated @entity(immutable: true) {
-  id: Bytes!
-  packs: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type GameBan @entity {
+  id: ID!
+  gameId: BigInt!
+  banned: Boolean!
+  by: Bytes!
+  timestamp: BigInt!
+}
+
+type TagBan @entity {
+  id: ID!
+  ownerTag: Bytes!
+  banned: Boolean!
+  by: Bytes!
+  timestamp: BigInt!
+}
+
+type BlacklistSetter @entity {
+  id: ID!
+  setter: Bytes!
+  allowed: Boolean!
+}
+
+type PaymasterTarget @entity {
+  id: ID!
+  target: Bytes!
+  gameId: BigInt!
+  core: Boolean!
+  active: Boolean!
+  cap: BigInt!
+}
+
+type SponsoredCall @entity(immutable: true) {
+  id: ID!
+  target: Bytes!
+  from: Bytes!
+  fee: BigInt!
+  epoch: BigInt!
+  timestamp: BigInt!
+}
+
+type GandaConfig @entity {
+  id: ID!
+  metadata: String!
+  globalBps: Int!
+  projectBps: Int!
+  nftBps: Int!
+  potBps: Int!
+  gamesPotBps: Int!
+  claimWindowEpochs: BigInt!
+  score: Bytes
+  paymaster: Bytes
+  paymasterDefaultCap: BigInt!
 }

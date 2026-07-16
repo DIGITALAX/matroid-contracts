@@ -1,20 +1,33 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity ^0.8.28;
 
-contract GandaErrors {
+library GandaErrors {
     error Unauthorized();
-    error AlreadyExists();
+    error ZeroAddress();
+    error ZeroAmount();
     error NotFound();
-    error NotActive();
+    error AlreadyExists();
     error InvalidInput();
-    error InvalidPrice();
-    error SoldOut();
-    error InsufficientBalance();
-    error DesignerNotFound();
-    error DesignerNotActive();
-    error OnlyInviter();
-    error ReactionPackNotFound();
-    error ReactionPackNotActive();
-    error NotWhitelistedHolder();
+    error GameNotActive();
+    error GameBanned();
+    error TagBanned();
+    error NotScorer();
+    error NotGameOwner();
+    error BadProof();
+    error UnknownRoot();
+    error NullifierUsed();
+    error BadNonce();
+    error InvalidSplit();
     error ProjectNotRegistered();
+    error EpochNotClosed();
+    error ClaimWindowClosed();
+    error NothingToClaim();
+    error AlreadyClaimed();
+    error NotRegistered();
+    error OverEpochLimit();
+    error VotingClosed();
+    error VotingOpen();
+    error QuorumNotMet();
+    error AlreadyExecuted();
+    error AlreadySet();
 }

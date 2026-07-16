@@ -1,70 +1,32 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity ^0.8.28;
 
-contract GandaLibrary {
- 
-    struct Ganda {
-        uint256 ganadaId;
-        address creator;
+library GandaLibrary {
+    struct Game {
+        bytes32 ownerTag;
+        address scorer;
         string uri;
-        uint64 createdAt;
-        bool active;
-        uint256 reactionCount;
+        uint64 version;
+        uint64 publishedAt;
+        bool exists;
+        bool removed;
     }
 
-    struct ReactionUsage {
-        uint256 reactionId;
-        uint256 count;
+    struct EpochGameTotals {
+        uint256 totalPoints;
+        uint256 playerCount;
     }
 
-    struct GandaReaction {
-        address reviewer;
-        uint256 reactionId;
-        uint256 ganadaId;
-        uint256 timestamp;
+    struct Proposal {
+        uint8 kind;
+        uint256 target;
+        bytes32 tagTarget;
+        uint256 value;
+        uint256 yes;
+        uint256 no;
+        uint64 start;
+        uint64 end;
+        bool executed;
         string uri;
-        ReactionUsage[] reactions;
-    }
-
-    struct Designer {
-        address wallet;
-        address invitedBy;
-        bool active;
-        uint256 designerId;
-        uint256 inviteTimestamp;
-        uint256 packCount;
-        uint256[] reactionPackIds;
-        string uri;
-    }
-
-    struct ReactionPack {
-        address designer;
-        uint256 packId;
-        uint256 currentPrice;
-        uint256 maxEditions;
-        uint256 soldCount;
-        uint256 holderReservedSpots;
-        bool active;
-        string packUri;
-        uint256[] reactionIds;
-        address[] buyers;
-        uint256[] buyerShares;
-    }
-
-    struct Reaction {
-        uint256 reactionId;
-        uint256 packId;
-        string reactionUri;
-        uint256[] tokenIds;
-    }
-
-    struct Purchase {
-        address buyer;
-        uint256 purchaseId;
-        uint256 packId;
-        uint256 price;
-        uint256 editionNumber;
-        uint256 shareWeight;
-        uint256 timestamp;
     }
 }
