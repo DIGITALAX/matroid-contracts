@@ -39,6 +39,7 @@ import {EnrollmentVerifier} from "../src/zk/verifiers/EnrollmentVerifier.sol";
 import {VotingVerifier} from "../src/zk/verifiers/VotingVerifier.sol";
 import {IdentityActionVerifier} from "../src/zk/verifiers/IdentityActionVerifier.sol";
 
+
 /// One integrated deploy: matroid (real Treasury/Registry/Staking/Governance) +
 /// dx.app wired into it as a registered project, sharing ONE MONA.
 ///
@@ -95,7 +96,7 @@ contract DeployAll is Script {
     }
 
     function _createPaymaster() internal {
-        uint256 defaultCap = vm.envOr("PAYMASTER_DEFAULT_CAP", uint256(1 ether));
+        uint256 defaultCap = vm.envOr("PAYMASTER_DEFAULT_CAP", uint256(100 ether));
         paymaster = address(new MatroidPaymaster(deployer, defaultCap));
     }
 

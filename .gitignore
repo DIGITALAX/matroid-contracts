@@ -24,6 +24,9 @@ cache/
 broadcast/
 **/broadcast/
 
+# ZK prover witnesses — contain a real captured chip device_secret + pubkey
+**/Prover.toml
+
 # Node modules 
 node_modules/
 **/node_modules/

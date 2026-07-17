@@ -15,7 +15,6 @@ contract GandaGamesTest is GandaTestBase {
         assertEq(game.uri, "ipfs://game");
         assertEq(game.version, 0);
         assertTrue(game.exists);
-        assertFalse(game.removed);
         assertTrue(games.isActive(id));
     }
 
@@ -70,14 +69,6 @@ contract GandaGamesTest is GandaTestBase {
         );
     }
 
-    function testRemoveGame() public {
-        uint256 id = publishGame();
-        games.removeGame(id, hex"01", hex"01", bytes32(uint256(1)), bytes32(uint256(5)), 0);
-        assertFalse(games.isActive(id));
-        GandaLibrary.Game memory game = games.getGame(id);
-        assertTrue(game.removed);
-    }
-
     function testRetag() public {
         uint256 id = publishGame();
         games.retag(id, hex"01", hex"01", bytes32(uint256(1)), bytes32(uint256(6)), ownerTag2, 0);
@@ -99,19 +90,6 @@ contract GandaGamesTest is GandaTestBase {
         assertEq(game.uri, "");
         assertEq(game.ownerTag, bytes32(0));
         assertFalse(games.isActive(id));
-    }
-
-    function testAdminRemoveGame() public {
-        uint256 id = publishGame();
-        games.adminRemoveGame(id);
-        assertFalse(games.isActive(id));
-    }
-
-    function testAdminRemoveGameUnauthorizedReverts() public {
-        uint256 id = publishGame();
-        vm.prank(player);
-        vm.expectRevert(GandaErrors.Unauthorized.selector);
-        games.adminRemoveGame(id);
     }
 
     function testAdminEditGame() public {

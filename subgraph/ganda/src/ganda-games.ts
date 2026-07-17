@@ -3,7 +3,6 @@ import {
   GamePublished as GamePublishedEvent,
   GameVersioned as GameVersionedEvent,
   GameRetagged as GameRetaggedEvent,
-  GameRemoved as GameRemovedEvent,
   GameErased as GameErasedEvent,
   GameAdminEdited as GameAdminEditedEvent,
 } from "../generated/GandaGames/GandaGames";
@@ -18,8 +17,6 @@ export function handleGamePublished(event: GamePublishedEvent): void {
   game.uri = event.params.uri;
   game.version = BigInt.zero();
   game.publishedAt = event.block.timestamp;
-  game.removed = false;
-  game.removedByAdmin = false;
   game.erased = false;
   game.banned = false;
   game.save();
@@ -39,13 +36,13 @@ export function handleGameVersioned(event: GameVersionedEvent): void {
   if (game == null) return;
   game.scorer = event.params.scorer;
   game.uri = event.params.uri;
-  game.version = BigInt.fromU64(event.params.version);
+  game.version = event.params.version;
   game.save();
 
   const version = new GameVersion(id + "-" + event.params.version.toString());
   version.game = id;
   version.scorer = event.params.scorer;
-  version.version = BigInt.fromU64(event.params.version);
+  version.version = event.params.version;
   version.uri = event.params.uri;
   version.timestamp = event.block.timestamp;
   version.save();
@@ -58,19 +55,10 @@ export function handleGameRetagged(event: GameRetaggedEvent): void {
   game.save();
 }
 
-export function handleGameRemoved(event: GameRemovedEvent): void {
-  const game = Game.load(event.params.gameId.toString());
-  if (game == null) return;
-  game.removed = true;
-  game.removedByAdmin = event.params.byAdmin;
-  game.save();
-}
-
 export function handleGameErased(event: GameErasedEvent): void {
   const game = Game.load(event.params.gameId.toString());
   if (game == null) return;
   game.erased = true;
-  game.removed = true;
   game.uri = "";
   game.ownerTag = Bytes.empty();
   game.scorer = Bytes.empty();

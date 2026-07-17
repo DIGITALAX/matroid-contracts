@@ -8,8 +8,8 @@ dataSources:
     name: MatroidRegistry
     network: lens-testnet
     source:
-      address: "0x31D207d79644EaFe086d906112136E0b1da9aa33"
       abi: MatroidRegistry
+      address: "0xD8f2918921aD39cFE7216C1Fd130F94d345615e6"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -29,7 +29,8 @@ dataSources:
       eventHandlers:
         - event: ClaimerUpdated(indexed address,indexed address,bool)
           handler: handleClaimerUpdated
-        - event: FlowRecorded(indexed address,indexed address,indexed address,uint256,bool)
+        - event: FlowRecorded(indexed address,indexed address,indexed
+            address,uint256,bool)
           handler: handleFlowRecorded
         - event: ProjectPoolsCreated(indexed address,address,address)
           handler: handleProjectPoolsCreated
@@ -44,8 +45,8 @@ dataSources:
     name: MatroidKit
     network: lens-testnet
     source:
-      address: "0x930AA8B963a7e26e8977323d59Daa691DbE09C83"
       abi: MatroidKit
+      address: "0x5713eC9FC31C15A353952EE895deE655E641F5FF"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -70,8 +71,8 @@ dataSources:
     name: Treasury
     network: lens-testnet
     source:
-      address: "0xEAb1473AF54213e20eBc63529D9172E0940648A1"
       abi: Treasury
+      address: "0xE571Ad3A5246bAa4d1b860E3785AC513750Ad8D9"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -126,8 +127,8 @@ dataSources:
     name: SlashingCouncil
     network: lens-testnet
     source:
-      address: "0xCe358F3C413674BDB1bcc7e4B9DabC4748a1eF63"
       abi: SlashingCouncil
+      address: "0x81499af07264a1E0494485333e165aEaBcAeCcab"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -158,8 +159,8 @@ dataSources:
     name: GlobalStakingPool
     network: lens-testnet
     source:
-      address: "0x99f628Afa165Fc5FC9d9440a2fB1dCAAA4e46C09"
       abi: GlobalStakingPool
+      address: "0x8e53DDbB26Ad1817f0DB4A51A3077cF24d23dbA0"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -188,8 +189,8 @@ dataSources:
     name: MatroidAnonGovernance
     network: lens-testnet
     source:
-      address: "0xeb718A7969B461E15d5Ae8EE685f776F1A6cDA03"
       abi: MatroidAnonGovernance
+      address: "0x012dA3d3085775a245Ec2CEDDa80eF98aC853157"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -212,8 +213,8 @@ dataSources:
     name: IdentityRegistry
     network: lens-testnet
     source:
-      address: "0xF86409FE1bC379E71Eee10A5F2A804Ec46816E69"
       abi: IdentityRegistry
+      address: "0x7990e98504AcD43681cdfFb975Aa75472836855e"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -233,8 +234,8 @@ dataSources:
     name: BalancePool
     network: lens-testnet
     source:
-      address: "0x09cb0C28e0Eb27c661EBD4069b4202042B547dA4"
       abi: BalancePool
+      address: "0x07BD5E26287B23354D27aA680D274b9098BA9e5B"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -255,8 +256,8 @@ dataSources:
     name: SponsorVault
     network: lens-testnet
     source:
-      address: "0x66c9502B178dB7f1e72DBa4F9BC4429BC1a08276"
       abi: SponsorVault
+      address: "0x315811d0f4129B9447618Ab35962Af5Bb138f892"
       startBlock: 4457000
     mapping:
       kind: ethereum/events
@@ -351,3 +352,4 @@ templates:
       abis:
         - name: ProjectStakingPool
           file: ./abis/ProjectStakingPool.json
+    network: lens-testnet

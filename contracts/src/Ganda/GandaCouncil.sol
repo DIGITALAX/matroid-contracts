@@ -5,7 +5,6 @@ import "./GandaErrors.sol";
 import "./GandaLibrary.sol";
 import "./GandaAccessControl.sol";
 import "./GandaBlacklist.sol";
-import "./GandaGames.sol";
 import "./GandaHub.sol";
 import "./GandaScore.sol";
 import {IdentityActionBase} from "../zk/IdentityActionBase.sol";
@@ -26,11 +25,9 @@ contract GandaCouncil is IdentityActionBase {
     uint8 public constant KIND_SET_QUORUM = 5;
     uint8 public constant KIND_SET_PAYMASTER_CAP = 6;
     uint8 public constant KIND_SET_POT_PARAMS = 7;
-    uint8 public constant KIND_ADMIN_REMOVE_GAME = 8;
 
     GandaAccessControl public immutable accessControl;
     GandaBlacklist public immutable blacklist;
-    GandaGames public immutable games;
     GandaHub public immutable hub;
     GandaScore public immutable score;
     address public paymaster;
@@ -42,7 +39,7 @@ contract GandaCouncil is IdentityActionBase {
     mapping(uint256 => GandaLibrary.Proposal) public proposals;
     mapping(uint256 => mapping(bytes32 => bool)) public usedVoteNullifier;
 
-    event Proposed(uint256 indexed proposalId, uint8 kind, uint256 target, bytes32 tagTarget, uint256 value, string uri);
+    event Proposed(uint256 indexed proposalId, uint8 kind, uint256 target, bytes32 tagTarget, uint256 value, uint64 start, uint64 end, string uri);
     event Voted(uint256 indexed proposalId, bytes32 indexed nullifier, bool support);
     event Executed(uint256 indexed proposalId, bool passed);
     event PaymasterSet(address paymaster);
@@ -57,7 +54,6 @@ contract GandaCouncil is IdentityActionBase {
         address rootsAddress,
         address accessControlAddress,
         address blacklistAddress,
-        address gamesAddress,
         address hubAddress,
         address scoreAddress,
         uint256 voteDurationSeconds,
@@ -66,14 +62,12 @@ contract GandaCouncil is IdentityActionBase {
         if (
             accessControlAddress == address(0) ||
             blacklistAddress == address(0) ||
-            gamesAddress == address(0) ||
             hubAddress == address(0) ||
             scoreAddress == address(0)
         ) revert GandaErrors.ZeroAddress();
         if (voteDurationSeconds == 0 || quorumValue == 0) revert GandaErrors.InvalidInput();
         accessControl = GandaAccessControl(accessControlAddress);
         blacklist = GandaBlacklist(blacklistAddress);
-        games = GandaGames(gamesAddress);
         hub = GandaHub(hubAddress);
         score = GandaScore(scoreAddress);
         voteDuration = voteDurationSeconds;
@@ -97,7 +91,7 @@ contract GandaCouncil is IdentityActionBase {
         uint256 value,
         string calldata uri
     ) external returns (uint256 proposalId) {
-        if (kind > KIND_ADMIN_REMOVE_GAME) revert GandaErrors.InvalidInput();
+        if (kind > KIND_SET_POT_PARAMS) revert GandaErrors.InvalidInput();
         proposalId = proposalCount + 1;
         bytes32 payloadHash = keccak256(
             abi.encode(kind, target, tagTarget, value, keccak256(bytes(uri)))
@@ -105,6 +99,8 @@ contract GandaCouncil is IdentityActionBase {
         _verifyAction(proof, PROPOSE_TAG, proposalId, payloadHash, nullifier, merkleRoot);
 
         proposalCount = proposalId;
+        uint64 start = uint64(block.timestamp);
+        uint64 end = uint64(block.timestamp + voteDuration);
         proposals[proposalId] = GandaLibrary.Proposal({
             kind: kind,
             target: target,
@@ -112,12 +108,12 @@ contract GandaCouncil is IdentityActionBase {
             value: value,
             yes: 0,
             no: 0,
-            start: uint64(block.timestamp),
-            end: uint64(block.timestamp + voteDuration),
+            start: start,
+            end: end,
             executed: false,
             uri: uri
         });
-        emit Proposed(proposalId, kind, target, tagTarget, value, uri);
+        emit Proposed(proposalId, kind, target, tagTarget, value, start, end, uri);
     }
 
     function vote(
@@ -191,8 +187,6 @@ contract GandaCouncil is IdentityActionBase {
             );
         } else if (kind == KIND_SET_POT_PARAMS) {
             score.setParams(uint16(proposal.value >> 128), uint256(uint128(proposal.value)));
-        } else if (kind == KIND_ADMIN_REMOVE_GAME) {
-            games.adminRemoveGame(proposal.target);
         }
     }
 }

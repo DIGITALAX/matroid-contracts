@@ -1,0 +1,190 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: GandaGames
+    network: lens-testnet
+    source:
+      abi: GandaGames
+      address: "0x1f8c1C0475B8Ec24147a47D92CCF0c015071a72D"
+      startBlock: 4457000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Game
+        - GameVersion
+      abis:
+        - name: GandaGames
+          file: GandaGames/GandaGames.json
+      eventHandlers:
+        - event: GamePublished(indexed uint256,indexed bytes32,address,string)
+          handler: handleGamePublished
+        - event: GameVersioned(indexed uint256,address,uint64,string)
+          handler: handleGameVersioned
+        - event: GameRetagged(indexed uint256,bytes32)
+          handler: handleGameRetagged
+        - event: GameErased(indexed uint256)
+          handler: handleGameErased
+        - event: GameAdminEdited(indexed uint256,string)
+          handler: handleGameAdminEdited
+      file: GandaGames/GandaGames.wasm
+  - kind: ethereum
+    name: GandaHub
+    network: lens-testnet
+    source:
+      abi: GandaHub
+      address: "0x5a49F3583F06D7eF5D2BbAcB4d91046d9e43AaB2"
+      startBlock: 4457000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Flow
+        - GameEpoch
+        - GandaConfig
+      abis:
+        - name: GandaHub
+          file: GandaHub/GandaHub.json
+      eventHandlers:
+        - event: Bootstrapped(string,uint16,uint16,uint16,uint16)
+          handler: handleBootstrapped
+        - event: FlowIn(indexed uint256,indexed address,uint256,address,uint256)
+          handler: handleFlowIn
+        - event: FlowOut(indexed uint256,indexed address,uint256,uint256)
+          handler: handleFlowOut
+        - event: PotFunded(indexed uint256,indexed uint256,uint256)
+          handler: handlePotFunded
+        - event: SplitsSet(uint16,uint16,uint16,uint16)
+          handler: handleSplitsSet
+        - event: ScoreSet(address)
+          handler: handleScoreSet
+      file: GandaHub/GandaHub.wasm
+  - kind: ethereum
+    name: GandaScore
+    network: lens-testnet
+    source:
+      abi: GandaScore
+      address: "0x99B2348A098390401D8972c50Db1Ec620aD43062"
+      startBlock: 4457000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - ScoreSubmission
+        - PlayerEpochGame
+        - PlayerEpoch
+        - Pot
+        - PotClaim
+        - GameEpoch
+        - GandaConfig
+      abis:
+        - name: GandaScore
+          file: GandaScore/GandaScore.json
+      eventHandlers:
+        - event: ScoreSubmitted(indexed uint256,indexed uint256,indexed bytes32,uint256,bool)
+          handler: handleScoreSubmitted
+        - event: PotNotified(indexed uint256,indexed uint256,uint256)
+          handler: handlePotNotified
+        - event: PlayerClaimed(indexed uint256,indexed bytes32,address,uint256)
+          handler: handlePlayerClaimed
+        - event: GamePotClaimed(indexed uint256,indexed uint256,address,uint256)
+          handler: handleGamePotClaimed
+        - event: PlayerErased(indexed uint256,indexed bytes32)
+          handler: handlePlayerErased
+        - event: ExpiredRolled(indexed uint256,indexed uint256,uint256)
+          handler: handleExpiredRolled
+        - event: ParamsSet(uint16,uint256)
+          handler: handleParamsSet
+      file: GandaScore/GandaScore.wasm
+  - kind: ethereum
+    name: GandaCouncil
+    network: lens-testnet
+    source:
+      abi: GandaCouncil
+      address: "0xFeDea92576d76E318e6dC2FfD801bD10F3d26015"
+      startBlock: 4457000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Proposal
+        - Vote
+        - GandaConfig
+      abis:
+        - name: GandaCouncil
+          file: GandaCouncil/GandaCouncil.json
+      eventHandlers:
+        - event: Proposed(indexed uint256,uint8,uint256,bytes32,uint256,uint64,uint64,string)
+          handler: handleProposed
+        - event: Voted(indexed uint256,indexed bytes32,bool)
+          handler: handleVoted
+        - event: Executed(indexed uint256,bool)
+          handler: handleExecuted
+        - event: PaymasterSet(address)
+          handler: handlePaymasterSet
+      file: GandaCouncil/GandaCouncil.wasm
+  - kind: ethereum
+    name: GandaBlacklist
+    network: lens-testnet
+    source:
+      abi: GandaBlacklist
+      address: "0x06a66E78BE2D79D545f8eBc9105A5371e7B7e272"
+      startBlock: 4457000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - GameBan
+        - TagBan
+        - BlacklistSetter
+        - Game
+      abis:
+        - name: GandaBlacklist
+          file: GandaBlacklist/GandaBlacklist.json
+      eventHandlers:
+        - event: GameBanSet(indexed uint256,bool,indexed address)
+          handler: handleGameBanSet
+        - event: TagBanSet(indexed bytes32,bool,indexed address)
+          handler: handleTagBanSet
+        - event: SetterChanged(indexed address,bool)
+          handler: handleSetterChanged
+      file: GandaBlacklist/GandaBlacklist.wasm
+  - kind: ethereum
+    name: GandaPaymaster
+    network: lens-testnet
+    source:
+      abi: GandaPaymaster
+      address: "0x0Ab1dD81A5851700641a1Bb22eB9268D9089E664"
+      startBlock: 4457000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - PaymasterTarget
+        - SponsoredCall
+        - GandaConfig
+      abis:
+        - name: GandaPaymaster
+          file: GandaPaymaster/GandaPaymaster.json
+      eventHandlers:
+        - event: CoreTargetSet(indexed address,bool)
+          handler: handleCoreTargetSet
+        - event: GameTargetRegistered(indexed uint256,indexed address,bool)
+          handler: handleGameTargetRegistered
+        - event: CapSet(indexed address,uint256)
+          handler: handleCapSet
+        - event: DefaultCapSet(uint256)
+          handler: handleDefaultCapSet
+        - event: SponsoredCall(indexed address,indexed address,uint256,uint256)
+          handler: handleSponsoredCall
+      file: GandaPaymaster/GandaPaymaster.wasm

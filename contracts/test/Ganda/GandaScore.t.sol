@@ -58,7 +58,7 @@ contract GandaScoreTest is GandaTestBase {
 
         vm.warp(block.timestamp + 1 weeks);
 
-        uint256 playersPot = (10e18 * (10_000 - GAMES_POT_BPS)) / 10_000;
+        uint256 playersPot = (10e18 * (10_000 - uint256(GAMES_POT_BPS))) / 10_000;
         vm.prank(player);
         score.claim(epoch, player);
         assertEq(mona.balanceOf(player), playersPot);
@@ -114,7 +114,7 @@ contract GandaScoreTest is GandaTestBase {
 
         address fresh = address(0xF4E5);
         score.claimAnon(epoch, hex"01", bytes32(uint256(1)), nullifier, fresh);
-        uint256 playersPot = (10e18 * (10_000 - GAMES_POT_BPS)) / 10_000;
+        uint256 playersPot = (10e18 * (10_000 - uint256(GAMES_POT_BPS))) / 10_000;
         assertEq(mona.balanceOf(fresh), playersPot);
     }
 
@@ -129,7 +129,7 @@ contract GandaScoreTest is GandaTestBase {
 
         address gameWallet = address(0xFA57);
         score.claimGame(epoch, id, hex"01", gameWallet);
-        uint256 gamesPot = (10e18 * GAMES_POT_BPS) / 10_000;
+        uint256 gamesPot = (10e18 * uint256(GAMES_POT_BPS)) / 10_000;
         assertEq(mona.balanceOf(gameWallet), gamesPot);
         assertTrue(score.gameClaimed(epoch, id));
 
@@ -146,7 +146,7 @@ contract GandaScoreTest is GandaTestBase {
 
         vm.warp(block.timestamp + 1 weeks);
 
-        uint256 gamesPot = (40e18 * GAMES_POT_BPS) / 10_000;
+        uint256 gamesPot = (40e18 * uint256(GAMES_POT_BPS)) / 10_000;
         address wallet1 = address(0xFA51);
         address wallet2 = address(0xFA52);
         score.claimGame(epoch, id1, hex"01", wallet1);
@@ -173,7 +173,7 @@ contract GandaScoreTest is GandaTestBase {
         vm.warp(block.timestamp + 1 weeks);
         vm.prank(player);
         score.claim(epoch, player);
-        uint256 playersPot = (10e18 * (10_000 - GAMES_POT_BPS)) / 10_000;
+        uint256 playersPot = (10e18 * (10_000 - uint256(GAMES_POT_BPS))) / 10_000;
         assertEq(mona.balanceOf(player), playersPot);
     }
 

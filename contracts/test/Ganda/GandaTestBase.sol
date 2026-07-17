@@ -3,7 +3,6 @@ pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {TestMona} from "../../src/zk/testing/TestMona.sol";
-import {AlwaysTrueVerifier} from "../../src/zk/testing/AlwaysTrueVerifier.sol";
 import {StakingFactory} from "../../src/StakingFactory.sol";
 import {MatroidRegistry} from "../../src/MatroidRegistry.sol";
 import {MatroidKit} from "../../src/MatroidKit.sol";
@@ -22,14 +21,20 @@ contract MockRoots {
     }
 }
 
+contract MockVerifier {
+    function verify(bytes calldata, bytes32[] calldata) external pure returns (bool) {
+        return true;
+    }
+}
+
 contract GandaTestBase is Test {
     TestMona mona;
     StakingFactory factory;
     MatroidRegistry registry;
     MatroidKit kit;
     GlobalStakingPool globalPool;
-    AlwaysTrueVerifier verifier;
     MockRoots roots;
+    MockVerifier verifier;
     GandaAccessControl acl;
     GandaBlacklist blacklist;
     GandaGames games;
@@ -65,7 +70,7 @@ contract GandaTestBase is Test {
         kit = new MatroidKit(address(registry));
         registry.setMatroidKit(address(kit));
         globalPool = new GlobalStakingPool(address(mona), 1 days);
-        verifier = new AlwaysTrueVerifier();
+        verifier = new MockVerifier();
         roots = new MockRoots();
         kit.setVerification(address(verifier), address(roots));
 
@@ -103,7 +108,6 @@ contract GandaTestBase is Test {
             address(roots),
             address(acl),
             address(blacklist),
-            address(games),
             address(hub),
             address(score),
             3 days,

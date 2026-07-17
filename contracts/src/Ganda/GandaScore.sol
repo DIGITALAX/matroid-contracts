@@ -16,6 +16,8 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant SCALE = 1e18;
+    uint256 private constant SNARK_FIELD =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
     bytes4 public constant CLAIM_TAG = bytes4(keccak256("gandaScore.claim"));
 
     GandaAccessControl public immutable accessControl;
@@ -42,7 +44,7 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
     mapping(uint256 => mapping(bytes32 => bool)) public playerClaimed;
     mapping(uint256 => mapping(uint256 => bool)) public gameClaimed;
 
-    event ScoreSubmitted(uint256 indexed epoch, uint256 indexed gameId, bytes32 indexed playerKey, uint256 points, bool anonymous);
+    event ScoreSubmitted(uint256 indexed epoch, uint256 indexed gameId, bytes32 indexed playerKey, uint256 points, bool anon);
     event PotNotified(uint256 indexed epoch, uint256 indexed gameId, uint256 amount);
     event PlayerClaimed(uint256 indexed epoch, bytes32 indexed playerKey, address payout, uint256 amount);
     event GamePotClaimed(uint256 indexed epoch, uint256 indexed gameId, address payout, uint256 amount);
@@ -220,7 +222,7 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
         uint256[] storage gameIds = _playerGames[epoch][playerKey];
         for (uint256 i = 0; i < gameIds.length; i++) {
             uint256 gameId = gameIds[i];
-            if (blacklist.isGameBanned(gameId)) continue;
+            if (bannedCounted[epoch][gameId]) continue;
             uint256 total = epochGameTotalPoints[epoch][gameId];
             if (total == 0) continue;
             nota += (epochPlayerPoints[epoch][gameId][playerKey] * SCALE) / total;
@@ -231,7 +233,7 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
         return _playerGames[epoch][playerKey];
     }
 
-    function _record(uint256 gameId, bytes32 playerKey, uint256 points, bool anonymous) private {
+    function _record(uint256 gameId, bytes32 playerKey, uint256 points, bool anon) private {
         if (points == 0) revert GandaErrors.ZeroAmount();
         uint256 epoch = hub.currentEpoch();
 
@@ -246,7 +248,7 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
             gameHasPoints[epoch][gameId] = true;
             epochGamesWithPoints[epoch] += 1;
         }
-        emit ScoreSubmitted(epoch, gameId, playerKey, points, anonymous);
+        emit ScoreSubmitted(epoch, gameId, playerKey, points, anon);
     }
 
     function _settlePlayerClaim(
@@ -284,6 +286,14 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
             epochPlayerPoints[epoch][gameId][playerKey] = 0;
             epochGameTotalPoints[epoch][gameId] -= points;
             epochGamePlayerCount[epoch][gameId] -= 1;
+            if (epochGameTotalPoints[epoch][gameId] == 0 && gameHasPoints[epoch][gameId]) {
+                gameHasPoints[epoch][gameId] = false;
+                epochGamesWithPoints[epoch] -= 1;
+                if (bannedCounted[epoch][gameId]) {
+                    bannedCounted[epoch][gameId] = false;
+                    epochBannedWithPoints[epoch] -= 1;
+                }
+            }
         }
         delete _playerGames[epoch][playerKey];
         emit PlayerErased(epoch, playerKey);
@@ -303,7 +313,7 @@ contract GandaScore is IdentityActionBase, ReentrancyGuard {
     ) private view {
         bytes32[] memory pubInputs = new bytes32[](3);
         pubInputs[0] = ownerTag;
-        pubInputs[1] = bound;
+        pubInputs[1] = bytes32(uint256(bound) % SNARK_FIELD);
         pubInputs[2] = bytes32(uint256(nonce));
         if (!ownerVerifier.verify(proof, pubInputs)) revert GandaErrors.BadProof();
     }

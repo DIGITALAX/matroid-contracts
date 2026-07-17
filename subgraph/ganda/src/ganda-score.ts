@@ -47,7 +47,7 @@ export function handleScoreSubmitted(event: ScoreSubmittedEvent): void {
   submission.epoch = event.params.epoch;
   submission.playerKey = event.params.playerKey;
   submission.points = event.params.points;
-  submission.anonymous = event.params.anonymous;
+  submission.anonymous = event.params.anon;
   submission.timestamp = event.block.timestamp;
   submission.save();
 

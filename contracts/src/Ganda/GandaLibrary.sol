@@ -9,7 +9,6 @@ library GandaLibrary {
         uint64 version;
         uint64 publishedAt;
         bool exists;
-        bool removed;
     }
 
     struct EpochGameTotals {

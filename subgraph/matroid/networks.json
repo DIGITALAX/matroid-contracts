@@ -1,23 +1,78 @@
 {
   "anvil": {
     "MatroidRegistry": {
-      "address": "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
+      "address": "0x09Ca99B9893FB38edA6375f46d487A78C29F3292",
       "startBlock": 0
     },
     "MatroidKit": {
-      "address": "0x8ce361602b935680e8dec218b820ff5056beb7af"
+      "address": "0xd029E16723D10634102C3b665df6908624880c34",
+      "startBlock": 0
     },
     "Treasury": {
-      "address": "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e"
+      "address": "0x22719C7546DA37C629085e0b7333Cd1118604F6c",
+      "startBlock": 0
     },
     "SlashingCouncil": {
-      "address": "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d"
+      "address": "0xb9695C94f3aACCE22921Ae4B6539481EA190Af43",
+      "startBlock": 0
     },
     "GlobalStakingPool": {
-      "address": "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
+      "address": "0x42585bc083ac4Ead2AF492E7aCfd83dc4117C2C1",
+      "startBlock": 0
     },
-    "StakingFactory": {
-      "address": "0xa15bb66138824a1c7167f5e85b957d04dd34e468"
+    "MatroidAnonGovernance": {
+      "address": "0x5686c890827423ff58eb4C8fDe8D18C3cbCc11b3",
+      "startBlock": 0
+    },
+    "IdentityRegistry": {
+      "address": "0x84C084579Daa3c6a6f600657969a38e8D3fBEB5F",
+      "startBlock": 0
+    },
+    "BalancePool": {
+      "address": "0x6a7d65c87dAa5c9ad98DBD1eF8567c2056989272",
+      "startBlock": 0
+    },
+    "SponsorVault": {
+      "address": "0x8BCF6fbF29032B3DDCf91634951f4beF51333191",
+      "startBlock": 0
+    }
+  },
+  "anvil-zksync": {
+    "MatroidRegistry": {
+      "address": "0x09Ca99B9893FB38edA6375f46d487A78C29F3292",
+      "startBlock": 0
+    },
+    "MatroidKit": {
+      "address": "0xd029E16723D10634102C3b665df6908624880c34",
+      "startBlock": 0
+    },
+    "Treasury": {
+      "address": "0x22719C7546DA37C629085e0b7333Cd1118604F6c",
+      "startBlock": 0
+    },
+    "SlashingCouncil": {
+      "address": "0xb9695C94f3aACCE22921Ae4B6539481EA190Af43",
+      "startBlock": 0
+    },
+    "GlobalStakingPool": {
+      "address": "0x42585bc083ac4Ead2AF492E7aCfd83dc4117C2C1",
+      "startBlock": 0
+    },
+    "MatroidAnonGovernance": {
+      "address": "0x5686c890827423ff58eb4C8fDe8D18C3cbCc11b3",
+      "startBlock": 0
+    },
+    "IdentityRegistry": {
+      "address": "0x84C084579Daa3c6a6f600657969a38e8D3fBEB5F",
+      "startBlock": 0
+    },
+    "BalancePool": {
+      "address": "0x6a7d65c87dAa5c9ad98DBD1eF8567c2056989272",
+      "startBlock": 0
+    },
+    "SponsorVault": {
+      "address": "0x8BCF6fbF29032B3DDCf91634951f4beF51333191",
+      "startBlock": 0
     }
   }
 }

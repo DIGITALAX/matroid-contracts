@@ -186,25 +186,6 @@ contract GandaCouncilTest is GandaTestBase {
         assertEq(pm.capOf(address(games)), 5 ether);
     }
 
-    function testAdminRemoveGameProposal() public {
-        uint256 gameId = publishGame();
-        uint256 proposalId = council.propose(
-            hex"01",
-            bytes32(uint256(1)),
-            bytes32(uint256(16)),
-            council.KIND_ADMIN_REMOVE_GAME(),
-            gameId,
-            bytes32(0),
-            0,
-            "ipfs://remove"
-        );
-        voteYes(proposalId, 100);
-        voteYes(proposalId, 101);
-        vm.warp(block.timestamp + 3 days + 1);
-        council.execute(proposalId);
-        assertFalse(games.isActive(gameId));
-    }
-
     function testBanTagProposal() public {
         uint256 proposalId = council.propose(
             hex"01",

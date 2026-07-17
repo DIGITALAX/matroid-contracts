@@ -1,10 +1,80 @@
 {
   "lens-testnet": {
-    "GandaGames": { "address": "0x0000000000000000000000000000000000000000", "startBlock": 0 },
-    "GandaHub": { "address": "0x0000000000000000000000000000000000000000", "startBlock": 0 },
-    "GandaScore": { "address": "0x0000000000000000000000000000000000000000", "startBlock": 0 },
-    "GandaCouncil": { "address": "0x0000000000000000000000000000000000000000", "startBlock": 0 },
-    "GandaBlacklist": { "address": "0x0000000000000000000000000000000000000000", "startBlock": 0 },
-    "GandaPaymaster": { "address": "0x0000000000000000000000000000000000000000", "startBlock": 0 }
+    "GandaGames": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 0
+    },
+    "GandaHub": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 0
+    },
+    "GandaScore": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 0
+    },
+    "GandaCouncil": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 0
+    },
+    "GandaBlacklist": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 0
+    },
+    "GandaPaymaster": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 0
+    }
+  },
+  "anvil-zksync": {
+    "GandaGames": {
+      "address": "0x6C3bEa7B46413Dc6Bb9B9050C7b1AcFF110D5A6E",
+      "startBlock": 0
+    },
+    "GandaHub": {
+      "address": "0x15A9392A88f4BC1694294D9f751B70d91B7d453a",
+      "startBlock": 0
+    },
+    "GandaScore": {
+      "address": "0xf367f85344Fd72e0D9A542D20Db0C9AC3Bd32BaD",
+      "startBlock": 0
+    },
+    "GandaCouncil": {
+      "address": "0x84Cdba7446AabCdc99ca84c6A83AC914d63e6669",
+      "startBlock": 0
+    },
+    "GandaBlacklist": {
+      "address": "0x70DF0c9140dA5e3B55AEA235330ED1ba5995459c",
+      "startBlock": 0
+    },
+    "GandaPaymaster": {
+      "address": "0xeDef03816581D4fFc18DcC62d26492b39B772932",
+      "startBlock": 0
+    }
+  },
+  "anvil": {
+    "GandaGames": {
+      "address": "0xFd7C17d3fA8788dAdfd807EF6290642743f95735",
+      "startBlock": 0
+    },
+    "GandaHub": {
+      "address": "0x20B241f1Ff16D935A77E2e00beE6495648a27459",
+      "startBlock": 0
+    },
+    "GandaScore": {
+      "address": "0xdF938D18A5A5245aC3056108b6b3A618087b0a94",
+      "startBlock": 0
+    },
+    "GandaCouncil": {
+      "address": "0xb9eC2EFFF9aa68260FD9E15FfA2CF89ed38ea0F1",
+      "startBlock": 0
+    },
+    "GandaBlacklist": {
+      "address": "0x5912c40330d9A979cB582675899C89BB70A19bB3",
+      "startBlock": 0
+    },
+    "GandaPaymaster": {
+      "address": "0x44fA7A445D4FcE773314EdA64F4243ca8A3E6A53",
+      "startBlock": 0
+    }
   }
 }

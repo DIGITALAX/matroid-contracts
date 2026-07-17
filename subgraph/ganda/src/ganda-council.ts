@@ -17,8 +17,8 @@ export function handleProposed(event: ProposedEvent): void {
   proposal.uri = event.params.uri;
   proposal.yes = BigInt.zero();
   proposal.no = BigInt.zero();
-  proposal.start = event.block.timestamp;
-  proposal.end = BigInt.zero();
+  proposal.start = event.params.start;
+  proposal.end = event.params.end;
   proposal.executed = false;
   proposal.passed = false;
   proposal.save();
@@ -50,7 +50,6 @@ export function handleExecuted(event: ExecutedEvent): void {
   if (proposal == null) return;
   proposal.executed = true;
   proposal.passed = event.params.passed;
-  proposal.end = event.block.timestamp;
   proposal.save();
 }
 

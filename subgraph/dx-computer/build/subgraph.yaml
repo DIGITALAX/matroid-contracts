@@ -8,9 +8,9 @@ dataSources:
     name: KitRegistry
     network: lens-testnet
     source:
-      address: "0x09265101Af7259CdcFd8c4C42CE872823e37f823"
+      address: "0xd7b56771EAe28Dd2FEF53fcd40C7340bE263C3c2"
       abi: KitRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -34,9 +34,9 @@ dataSources:
     name: GrantRegistry
     network: lens-testnet
     source:
-      address: "0x7b7Ee5641DF2BFe3B6ae976D50f363a9D8718995"
+      address: "0x3bc48FBFa49b9BcDdcC0cF5B79488115e3dE9A6e"
       abi: GrantRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -66,9 +66,9 @@ dataSources:
     name: PrefabMarket
     network: lens-testnet
     source:
-      address: "0x58f4b580c822698c36329eCF47FF2eF8828139e7"
+      address: "0xf6A6AEfd407C952F5216626337974863a7918bd1"
       abi: PrefabMarket
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -114,9 +114,9 @@ dataSources:
     name: ContentRegistry
     network: lens-testnet
     source:
-      address: "0xC5291AB762D90b25A0ce1d6865B983b2815f2965"
+      address: "0x5a9FF14C57ef46B06aC621F62F7A0896945351b9"
       abi: ContentRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -136,9 +136,9 @@ dataSources:
     name: CyberswagmanRegistry
     network: lens-testnet
     source:
-      address: "0xd0Edca81Ae742b87ABd8628211Da391df1A74dab"
+      address: "0x2c42613874dbE533F3fafE90b7Ee41898D1318A8"
       abi: CyberswagmanRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -166,9 +166,9 @@ dataSources:
     name: DxCouncil
     network: lens-testnet
     source:
-      address: "0x1386687AF46Be8Cbf59172748c08d6ea56C70334"
+      address: "0xA468711BACe058139b9ac3A062bff5393124d6b1"
       abi: DxCouncil
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -190,9 +190,9 @@ dataSources:
     name: IdentityRegistry
     network: lens-testnet
     source:
-      address: "0xF86409FE1bC379E71Eee10A5F2A804Ec46816E69"
+      address: "0x7990e98504AcD43681cdfFb975Aa75472836855e"
       abi: IdentityRegistry
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -211,9 +211,9 @@ dataSources:
     name: BalancePool
     network: lens-testnet
     source:
-      address: "0xeFC593F3146d347D1E677AFBD8788bB3775Ed429"
+      address: "0xad579354c49492F6B8A5843147E45ff03B9Da1F5"
       abi: BalancePool
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -233,9 +233,9 @@ dataSources:
     name: Blacklist
     network: lens-testnet
     source:
-      address: "0x049f513B723eAc5D72b31518A550C9aAECCF3fE5"
+      address: "0x734Dff80e53D3A8f509E62481CeDD3a85649b5c8"
       abi: Blacklist
-      startBlock: 0
+      startBlock: 4457000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

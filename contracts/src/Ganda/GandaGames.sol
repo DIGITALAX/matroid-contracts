@@ -11,6 +11,8 @@ import {IdentityActionBase} from "../zk/IdentityActionBase.sol";
 contract GandaGames is IdentityActionBase {
     bytes4 public constant PUBLISH_TAG = bytes4(keccak256("gandaGames.publish"));
     bytes4 public constant EDIT_TAG = bytes4(keccak256("gandaGames.edit"));
+    uint256 private constant SNARK_FIELD =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     IVerifier public immutable ownerVerifier;
     GandaAccessControl public immutable accessControl;
@@ -22,7 +24,6 @@ contract GandaGames is IdentityActionBase {
     event GamePublished(uint256 indexed gameId, bytes32 indexed ownerTag, address scorer, string uri);
     event GameVersioned(uint256 indexed gameId, address scorer, uint64 version, string uri);
     event GameRetagged(uint256 indexed gameId, bytes32 newOwnerTag);
-    event GameRemoved(uint256 indexed gameId, bool byAdmin);
     event GameErased(uint256 indexed gameId);
     event GameAdminEdited(uint256 indexed gameId, string uri);
 
@@ -70,8 +71,7 @@ contract GandaGames is IdentityActionBase {
             uri: uri,
             version: 0,
             publishedAt: uint64(block.timestamp),
-            exists: true,
-            removed: false
+            exists: true
         });
         emit GamePublished(gameId, ownerTag, scorer, uri);
     }
@@ -88,6 +88,7 @@ contract GandaGames is IdentityActionBase {
     ) external {
         if (newScorer == address(0)) revert GandaErrors.ZeroAddress();
         GandaLibrary.Game storage game = _liveGame(gameId);
+        if (blacklist.isGameBanned(gameId)) revert GandaErrors.GameBanned();
         if (nonce != game.version) revert GandaErrors.BadNonce();
         bytes32 bound = keccak256(abi.encode(newScorer, keccak256(bytes(newUri))));
         _verifyEdit(
@@ -103,23 +104,6 @@ contract GandaGames is IdentityActionBase {
         emit GameVersioned(gameId, newScorer, game.version, newUri);
     }
 
-    function removeGame(
-        uint256 gameId,
-        bytes calldata ownerProof,
-        bytes calldata actionProof,
-        bytes32 merkleRoot,
-        bytes32 nullifier,
-        uint64 nonce
-    ) external {
-        GandaLibrary.Game storage game = _liveGame(gameId);
-        if (nonce != game.version) revert GandaErrors.BadNonce();
-        _verifyEdit(actionProof, merkleRoot, nullifier, keccak256(abi.encode(gameId, nonce)));
-        _verifyOwner(ownerProof, game.ownerTag, bytes32(0), nonce);
-        game.removed = true;
-        game.version = nonce + 1;
-        emit GameRemoved(gameId, false);
-    }
-
     function retag(
         uint256 gameId,
         bytes calldata ownerProof,
@@ -131,6 +115,7 @@ contract GandaGames is IdentityActionBase {
     ) external {
         if (blacklist.isTagBanned(newOwnerTag)) revert GandaErrors.TagBanned();
         GandaLibrary.Game storage game = _liveGame(gameId);
+        if (blacklist.isGameBanned(gameId)) revert GandaErrors.GameBanned();
         if (nonce != game.version) revert GandaErrors.BadNonce();
         _verifyEdit(
             actionProof,
@@ -166,12 +151,6 @@ contract GandaGames is IdentityActionBase {
         emit GameErased(gameId);
     }
 
-    function adminRemoveGame(uint256 gameId) external onlyAdmin {
-        GandaLibrary.Game storage game = _liveGame(gameId);
-        game.removed = true;
-        emit GameRemoved(gameId, true);
-    }
-
     function adminEditGame(uint256 gameId, string calldata uri) external onlyAdmin {
         GandaLibrary.Game storage game = _liveGame(gameId);
         game.uri = uri;
@@ -180,7 +159,7 @@ contract GandaGames is IdentityActionBase {
 
     function isActive(uint256 gameId) public view returns (bool) {
         GandaLibrary.Game storage game = games[gameId];
-        return game.exists && !game.removed && !blacklist.isGameBanned(gameId);
+        return game.exists && !blacklist.isGameBanned(gameId);
     }
 
     function scorerOf(uint256 gameId) external view returns (address) {
@@ -198,7 +177,6 @@ contract GandaGames is IdentityActionBase {
     function _liveGame(uint256 gameId) private view returns (GandaLibrary.Game storage game) {
         game = games[gameId];
         if (!game.exists) revert GandaErrors.NotFound();
-        if (game.removed) revert GandaErrors.GameNotActive();
     }
 
     function _verifyEdit(
@@ -218,7 +196,7 @@ contract GandaGames is IdentityActionBase {
     ) private view {
         bytes32[] memory pubInputs = new bytes32[](3);
         pubInputs[0] = ownerTag;
-        pubInputs[1] = bound;
+        pubInputs[1] = bytes32(uint256(bound) % SNARK_FIELD);
         pubInputs[2] = bytes32(uint256(nonce));
         if (!ownerVerifier.verify(proof, pubInputs)) revert GandaErrors.BadProof();
     }

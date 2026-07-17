@@ -121,17 +121,22 @@ contract MatroidPaymaster is IPaymaster {
         if (!success) revert FeeTransferFailed();
 
         emit SponsoredCall(project, address(uint160(_transaction.from)), requiredFee, epoch);
-        context = "";
+        context = abi.encode(project, _transaction.maxFeePerGas, epoch);
     }
 
     function postTransaction(
-        bytes calldata,
+        bytes calldata _context,
         Transaction calldata,
         bytes32,
         bytes32,
         ExecutionResult,
-        uint256
-    ) external payable onlyBootloader {}
+        uint256 _maxRefundedGas
+    ) external payable onlyBootloader {
+        (address project, uint256 maxFeePerGas, uint256 epoch) = abi.decode(_context, (address, uint256, uint256));
+        uint256 refund = _maxRefundedGas * maxFeePerGas;
+        uint256 spent = spentInEpoch[project][epoch];
+        spentInEpoch[project][epoch] = refund >= spent ? 0 : spent - refund;
+    }
 
     function fund() external payable {
         emit Funded(msg.sender, msg.value);
